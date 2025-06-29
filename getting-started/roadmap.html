@@ -3,7 +3,7 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>Getting started - Ethrex</title>
+        <title>Roadmap - Ethrex</title>
 
 
         <!-- Custom HTML head -->
@@ -236,47 +236,52 @@
 }
 
 </style>
-<h1 id="getting-started-with-ethrex-l2-stack"><a class="header" href="#getting-started-with-ethrex-l2-stack">Getting started with ethrex L2 stack</a></h1>
-<h2 id="starting-the-l2"><a class="header" href="#starting-the-l2">Starting the L2</a></h2>
-<div class="mdbook-alerts mdbook-alerts-important">
-<p class="mdbook-alerts-title">
-  <span class="mdbook-alerts-icon"></span>
-  important
-</p>
-<p>Make sure docker is running!</p>
+<h1 id="roadmap"><a class="header" href="#roadmap">Roadmap</a></h1>
+<p>This project is under active development. Over the next <strong>two months</strong>, our <strong>primary objective is to finalize and audit the first version of the stack</strong>.
+This means every component — from L1 syncing to L2 bridging and prover integration — must meet stability, performance, and security standards.</p>
+<p>The roadmap below outlines the remaining work required to achieve this milestone, organized into three major areas: <strong>L2</strong>, <strong>DevOps &amp; Performance</strong>, and <strong>L1</strong>.</p>
+<hr />
+<h2 id="l2-roadmap"><a class="header" href="#l2-roadmap">L2 Roadmap</a></h2>
+<div class="table-wrapper"><table><thead><tr><th>Feature</th><th>Description</th><th>Status</th></tr></thead><tbody>
+<tr><td>Native Bridge</td><td>Secure and trust-minimized ERC-20 bridge between Ethereum L1 and L2 using canonical messaging and smart contracts.</td><td>In Progress</td></tr>
+<tr><td>Based Rollup</td><td>Launch the rollup as a based permissionless rollup. Leverages Ethereum for sequencing and DA. For more information check <a href="https://hackmd.io/TCa-bQisToW46enF58_3Vw?view">ethrex roadmap for becoming based</a></td><td>In Progress</td></tr>
+<tr><td>Aligned Integration</td><td>Optimize integration with Aligned’s aggregation mode.</td><td>In Progress</td></tr>
+<tr><td>Risc0 Support</td><td>Integrate RISC Zero as an alternative zkVM to SP1, enabling configurable proving backends.</td><td>In Progress</td></tr>
+<tr><td>Battle-Test the Prover</td><td>Ensure the prover (e.g., SP1, Risc0) is robust, correct, and performant under production-level  conditions.</td><td>In Progress</td></tr>
+<tr><td>One-Click L2 Deployment</td><td>Deploy a fully operational rollup with a single command. Includes TDX, Prover, integrated Grafana metrics, alerting system, block explorer, bridge hub, backups and default configuration for rapid developer spin-up.</td><td>In Progress</td></tr>
+<tr><td>Shared Bridge</td><td>Direct bridging between multiple L2s to improve UX and avoid L1 costs.</td><td>Planned</td></tr>
+<tr><td>Custom Native Token</td><td>Define a native token (non-ETH) for gas, staking, incentives, and governance. Fully integrated into fee mechanics and bridging.</td><td>Planned</td></tr>
+<tr><td>Validiums &amp; DACs</td><td>Enhance Validium mode with Data Availability Committees.</td><td>Planned</td></tr>
+<tr><td>Gas &amp; Fees</td><td>Set up a custom fee model to price deposits or any forced-included transaction, including data availability costs.</td><td>Planned</td></tr>
+</tbody></table>
 </div>
-<ol>
-<li><code>cd crates/l2</code></li>
-<li><code>make rm-db-l2 &amp;&amp; make down</code>
-<ul>
-<li>This will remove any old database stored in your computer, if present. The absolute path of libmdbx is defined by <a href="https://docs.rs/dirs/latest/dirs/fn.data_dir.html">data_dir</a>.</li>
-</ul>
-</li>
-<li><code>make init</code>
-<ul>
-<li>Starts the L1 in a docker container on port <code>8545</code>.</li>
-<li>Deploys the needed contracts for the L2 on the L1.</li>
-<li>Starts the L2 locally on port <code>1729</code>.</li>
-</ul>
-</li>
-</ol>
-<p>For more information on how to run the L2 node with the prover attached to it, the <a href="./prover.html">Prover Docs</a> provides more insight.</p>
-<h2 id="configuration"><a class="header" href="#configuration">Configuration</a></h2>
-<p>The program that deploys our L2 contracts outputs the addresses in a <code>.env</code> file, that includes environment information used by each component, automatically loaded by our makefile.
-Apart from these, each component accepts multiple configuration options, which can be configured either in the <code>.env</code>, or with CLI flags.
-More information is available in <a href="./components.html">the documentation for each component</a>.</p>
-<h2 id="guides"><a class="header" href="#guides">Guides</a></h2>
-<p>For more information on how to perform certain operations, go to <a href="./guides">Guides</a>.</p>
-
+<hr />
+<h2 id="devops--performance"><a class="header" href="#devops--performance">DevOps &amp; Performance</a></h2>
+<div class="table-wrapper"><table><thead><tr><th>Initiative</th><th>Description</th><th>Status</th></tr></thead><tbody>
+<tr><td>Performance Benchmarking</td><td>Continuous <code>ggas/s</code> measurement, client comparison, and reproducible load tests.</td><td>In Progress</td></tr>
+<tr><td>DB Optimizations</td><td>Snapshots, background trie commits, parallel Merkle root calculation, and exploratory DB design.</td><td>In Progress</td></tr>
+<tr><td>EVM Profiling</td><td>Identify and optimize execution bottlenecks in the VM.</td><td>In Progress</td></tr>
+<tr><td>Deployment &amp; Dev Experience</td><td>One-command L2 launch, localnet spam testing, and L1 syncing on any network.</td><td>In Progress</td></tr>
+</tbody></table>
+</div>
+<hr />
+<h2 id="l1-roadmap"><a class="header" href="#l1-roadmap">L1 Roadmap</a></h2>
+<div class="table-wrapper"><table><thead><tr><th>Feature</th><th>Description</th><th>Status</th></tr></thead><tbody>
+<tr><td>P2P Improvements</td><td>Use <a href="https://github.com/lambdaclass/spawned">spawned</a> to improve peer discovery, sync reliability, and connection handling.</td><td>In Progress</td></tr>
+<tr><td>Chain Syncing</td><td>Verify the execution of all blocks across all chains. For Proof-of-Stake (PoS) chains (Holesky, Hoodi), verify all blocks since genesis. For chains with a pre-Merge genesis (Sepolia, Mainnet), verify all blocks after the Merge.</td><td>In Progress</td></tr>
+<tr><td>Snap Sync</td><td>Improve Snap Sync implementation to make it more reliable and efficient.</td><td>Planned</td></tr>
+<tr><td>Client Stability</td><td>Increase client resilience to adverse scenarios and network disruptions. Improve observability and logging.</td><td>Planned</td></tr>
+</tbody></table>
+</div>
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
-                            <a rel="prev" href="../l2/index.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                            <a rel="prev" href="../getting-started/index.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                                 <i class="fa fa-angle-left"></i>
                             </a>
 
-                            <a rel="next prefetch" href="../l2/guides/index.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <a rel="next prefetch" href="../l1/index.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <i class="fa fa-angle-right"></i>
                             </a>
 
@@ -286,11 +291,11 @@ More information is available in <a href="./components.html">the documentation f
             </div>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
-                    <a rel="prev" href="../l2/index.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                    <a rel="prev" href="../getting-started/index.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                         <i class="fa fa-angle-left"></i>
                     </a>
 
-                    <a rel="next prefetch" href="../l2/guides/index.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                    <a rel="next prefetch" href="../l1/index.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <i class="fa fa-angle-right"></i>
                     </a>
             </nav>

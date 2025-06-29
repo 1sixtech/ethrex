@@ -236,47 +236,22 @@
 }
 
 </style>
-<h1 id="getting-started-with-ethrex-l2-stack"><a class="header" href="#getting-started-with-ethrex-l2-stack">Getting started with ethrex L2 stack</a></h1>
-<h2 id="starting-the-l2"><a class="header" href="#starting-the-l2">Starting the L2</a></h2>
-<div class="mdbook-alerts mdbook-alerts-important">
-<p class="mdbook-alerts-title">
-  <span class="mdbook-alerts-icon"></span>
-  important
-</p>
-<p>Make sure docker is running!</p>
-</div>
-<ol>
-<li><code>cd crates/l2</code></li>
-<li><code>make rm-db-l2 &amp;&amp; make down</code>
+<h1 id="getting-started"><a class="header" href="#getting-started">Getting started</a></h1>
+<h2 id="l1-and-l2-support"><a class="header" href="#l1-and-l2-support">L1 and L2 support</a></h2>
+<p>This client supports running in two different modes:</p>
 <ul>
-<li>This will remove any old database stored in your computer, if present. The absolute path of libmdbx is defined by <a href="https://docs.rs/dirs/latest/dirs/fn.data_dir.html">data_dir</a>.</li>
+<li>As a regular Ethereum execution client</li>
+<li>As a multi-prover ZK-Rollup (supporting SP1, RISC Zero and TEEs), where block execution is proven and the proof sent to an L1 network for verification, thus inheriting the L1's security. Support for based sequencing is currently in the works.</li>
 </ul>
-</li>
-<li><code>make init</code>
-<ul>
-<li>Starts the L1 in a docker container on port <code>8545</code>.</li>
-<li>Deploys the needed contracts for the L2 on the L1.</li>
-<li>Starts the L2 locally on port <code>1729</code>.</li>
-</ul>
-</li>
-</ol>
-<p>For more information on how to run the L2 node with the prover attached to it, the <a href="./prover.html">Prover Docs</a> provides more insight.</p>
-<h2 id="configuration"><a class="header" href="#configuration">Configuration</a></h2>
-<p>The program that deploys our L2 contracts outputs the addresses in a <code>.env</code> file, that includes environment information used by each component, automatically loaded by our makefile.
-Apart from these, each component accepts multiple configuration options, which can be configured either in the <code>.env</code>, or with CLI flags.
-More information is available in <a href="./components.html">the documentation for each component</a>.</p>
-<h2 id="guides"><a class="header" href="#guides">Guides</a></h2>
-<p>For more information on how to perform certain operations, go to <a href="./guides">Guides</a>.</p>
+<p>We call the first one "ethrex L1" and the second one "ethrex L2".
+You can find more information on our <a href="../l1">L1</a> or <a href="../l2">L2</a> docs, respectively.</p>
 
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
-                            <a rel="prev" href="../l2/index.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
-                                <i class="fa fa-angle-left"></i>
-                            </a>
 
-                            <a rel="next prefetch" href="../l2/guides/index.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <a rel="next prefetch" href="../getting-started/roadmap.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <i class="fa fa-angle-right"></i>
                             </a>
 
@@ -286,11 +261,8 @@ More information is available in <a href="./components.html">the documentation f
             </div>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
-                    <a rel="prev" href="../l2/index.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
-                        <i class="fa fa-angle-left"></i>
-                    </a>
 
-                    <a rel="next prefetch" href="../l2/guides/index.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                    <a rel="next prefetch" href="../getting-started/roadmap.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <i class="fa fa-angle-right"></i>
                     </a>
             </nav>

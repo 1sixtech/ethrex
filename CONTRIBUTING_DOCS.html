@@ -3,7 +3,7 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>Getting started - Ethrex</title>
+        <title>Contributing to the Documentation - Ethrex</title>
 
 
         <!-- Custom HTML head -->
@@ -12,33 +12,33 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="theme-color" content="#ffffff">
 
-        <link rel="icon" href="../favicon.svg">
-        <link rel="shortcut icon" href="../favicon.png">
-        <link rel="stylesheet" href="../css/variables.css">
-        <link rel="stylesheet" href="../css/general.css">
-        <link rel="stylesheet" href="../css/chrome.css">
-        <link rel="stylesheet" href="../css/print.css" media="print">
+        <link rel="icon" href="favicon.svg">
+        <link rel="shortcut icon" href="favicon.png">
+        <link rel="stylesheet" href="css/variables.css">
+        <link rel="stylesheet" href="css/general.css">
+        <link rel="stylesheet" href="css/chrome.css">
+        <link rel="stylesheet" href="css/print.css" media="print">
 
         <!-- Fonts -->
-        <link rel="stylesheet" href="../FontAwesome/css/font-awesome.css">
-        <link rel="stylesheet" href="../fonts/fonts.css">
+        <link rel="stylesheet" href="FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="fonts/fonts.css">
 
         <!-- Highlight.js Stylesheets -->
-        <link rel="stylesheet" id="highlight-css" href="../highlight.css">
-        <link rel="stylesheet" id="tomorrow-night-css" href="../tomorrow-night.css">
-        <link rel="stylesheet" id="ayu-highlight-css" href="../ayu-highlight.css">
+        <link rel="stylesheet" id="highlight-css" href="highlight.css">
+        <link rel="stylesheet" id="tomorrow-night-css" href="tomorrow-night.css">
+        <link rel="stylesheet" id="ayu-highlight-css" href="ayu-highlight.css">
 
         <!-- Custom theme stylesheets -->
 
 
         <!-- Provide site root and default themes to javascript -->
         <script>
-            const path_to_root = "../";
+            const path_to_root = "";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../toc.js"></script>
+        <script src="toc.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -102,7 +102,7 @@
             <!-- populated by js -->
             <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
             <noscript>
-                <iframe class="sidebar-iframe-outer" src="../toc.html"></iframe>
+                <iframe class="sidebar-iframe-outer" src="toc.html"></iframe>
             </noscript>
             <div id="sidebar-resize-handle" class="sidebar-resize-handle">
                 <div class="sidebar-resize-indicator"></div>
@@ -137,7 +137,7 @@
                     <h1 class="menu-title">Ethrex</h1>
 
                     <div class="right-buttons">
-                        <a href="../print.html" title="Print this book" aria-label="Print this book">
+                        <a href="print.html" title="Print this book" aria-label="Print this book">
                             <i id="print-button" class="fa fa-print"></i>
                         </a>
                         <a href="https://github.com/lambdaclass/ethrex" title="Git repository" aria-label="Git repository">
@@ -236,47 +236,56 @@
 }
 
 </style>
-<h1 id="getting-started-with-ethrex-l2-stack"><a class="header" href="#getting-started-with-ethrex-l2-stack">Getting started with ethrex L2 stack</a></h1>
-<h2 id="starting-the-l2"><a class="header" href="#starting-the-l2">Starting the L2</a></h2>
-<div class="mdbook-alerts mdbook-alerts-important">
-<p class="mdbook-alerts-title">
-  <span class="mdbook-alerts-icon"></span>
-  important
-</p>
-<p>Make sure docker is running!</p>
-</div>
-<ol>
-<li><code>cd crates/l2</code></li>
-<li><code>make rm-db-l2 &amp;&amp; make down</code>
+<h1 id="contributing-to-the-documentation"><a class="header" href="#contributing-to-the-documentation">Contributing to the Documentation</a></h1>
+<p>We welcome contributions to the documentation! If you want to help improve or expand the docs, please follow these guidelines:</p>
+<h2 id="how-to-edit-the-docs"><a class="header" href="#how-to-edit-the-docs">How to Edit the Docs</a></h2>
 <ul>
-<li>This will remove any old database stored in your computer, if present. The absolute path of libmdbx is defined by <a href="https://docs.rs/dirs/latest/dirs/fn.data_dir.html">data_dir</a>.</li>
-</ul>
+<li>
+<p>All documentation lives in this <code>docs/</code> directory and its subfolders.</p>
 </li>
-<li><code>make init</code>
+<li>
+<p>The documentation is written in Markdown and rendered using <a href="https://rust-lang.github.io/mdBook/">mdBook</a>.</p>
+</li>
+<li>
+<p>To preview your changes locally, <a href="#documentation-dependencies">install the dependencies</a> and run:</p>
+<pre><code class="language-sh">make docs-serve
+</code></pre>
+<p>This will start a local server and open the docs in your browser.</p>
+</li>
+</ul>
+<h2 id="adding-or-editing-content"><a class="header" href="#adding-or-editing-content">Adding or Editing Content</a></h2>
 <ul>
-<li>Starts the L1 in a docker container on port <code>8545</code>.</li>
-<li>Deploys the needed contracts for the L2 on the L1.</li>
-<li>Starts the L2 locally on port <code>1729</code>.</li>
+<li>To add a new page, create a new <code>.md</code> file in the appropriate subdirectory and add a link to it in <code>SUMMARY.md</code>.</li>
+<li>To edit an existing page, simply modify the relevant <code>.md</code> file.</li>
+<li>For style and formatting, try to keep a consistent tone and structure with the rest of the documentation.</li>
 </ul>
-</li>
-</ol>
-<p>For more information on how to run the L2 node with the prover attached to it, the <a href="./prover.html">Prover Docs</a> provides more insight.</p>
-<h2 id="configuration"><a class="header" href="#configuration">Configuration</a></h2>
-<p>The program that deploys our L2 contracts outputs the addresses in a <code>.env</code> file, that includes environment information used by each component, automatically loaded by our makefile.
-Apart from these, each component accepts multiple configuration options, which can be configured either in the <code>.env</code>, or with CLI flags.
-More information is available in <a href="./components.html">the documentation for each component</a>.</p>
-<h2 id="guides"><a class="header" href="#guides">Guides</a></h2>
-<p>For more information on how to perform certain operations, go to <a href="./guides">Guides</a>.</p>
+<h2 id="documentation-dependencies"><a class="header" href="#documentation-dependencies">Documentation dependencies</a></h2>
+<p>We use some mdBook preprocessors and backends for extra features:</p>
+<ul>
+<li><a href="https://github.com/lambdalisue/rs-mdbook-alerts"><code>mdbook-alerts</code></a> for custom markdown syntax.</li>
+<li><a href="https://github.com/badboy/mdbook-mermaid"><code>mdbook-mermaid</code></a> for diagrams.</li>
+<li><a href="https://github.com/Michael-F-Bryan/mdbook-linkcheck"><code>mdbook-linkcheck</code></a> for checking broken links (optional).</li>
+</ul>
+<p>You can install mdBook and all dependencies with:</p>
+<pre><code class="language-sh">make docs-deps
+</code></pre>
+<h2 id="submitting-changes"><a class="header" href="#submitting-changes">Submitting Changes</a></h2>
+<ul>
+<li>Please open a Pull Request with your proposed changes.</li>
+<li>If you are adding new content, update <code>SUMMARY.md</code> so it appears in the navigation.</li>
+<li>If you have questions, open an issue or ask in the community chat.</li>
+</ul>
+<p>Thank you for helping improve the documentation!</p>
 
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
-                            <a rel="prev" href="../l2/index.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                            <a rel="prev" href="developers/l2/load_tests.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                                 <i class="fa fa-angle-left"></i>
                             </a>
 
-                            <a rel="next prefetch" href="../l2/guides/index.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <a rel="next prefetch" href="perf_reports/index.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <i class="fa fa-angle-right"></i>
                             </a>
 
@@ -286,11 +295,11 @@ More information is available in <a href="./components.html">the documentation f
             </div>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
-                    <a rel="prev" href="../l2/index.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                    <a rel="prev" href="developers/l2/load_tests.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                         <i class="fa fa-angle-left"></i>
                     </a>
 
-                    <a rel="next prefetch" href="../l2/guides/index.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                    <a rel="next prefetch" href="perf_reports/index.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <i class="fa fa-angle-right"></i>
                     </a>
             </nav>
@@ -305,17 +314,17 @@ More information is available in <a href="./components.html">the documentation f
         </script>
 
 
-        <script src="../elasticlunr.min.js"></script>
-        <script src="../mark.min.js"></script>
-        <script src="../searcher.js"></script>
+        <script src="elasticlunr.min.js"></script>
+        <script src="mark.min.js"></script>
+        <script src="searcher.js"></script>
 
-        <script src="../clipboard.min.js"></script>
-        <script src="../highlight.js"></script>
-        <script src="../book.js"></script>
+        <script src="clipboard.min.js"></script>
+        <script src="highlight.js"></script>
+        <script src="book.js"></script>
 
         <!-- Custom JS scripts -->
-        <script src="../mermaid.min.js"></script>
-        <script src="../mermaid-init.js"></script>
+        <script src="mermaid.min.js"></script>
+        <script src="mermaid-init.js"></script>
 
 
     </div>
