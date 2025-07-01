@@ -3,7 +3,7 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>2025-04-03 - Ethrex</title>
+        <title>Deposits - Ethrex</title>
 
 
         <!-- Custom HTML head -->
@@ -237,72 +237,237 @@
 }
 
 </style>
-<h1 id="eliminating-redundant-rlp-encoding-in-trie-pr-2353"><a class="header" href="#eliminating-redundant-rlp-encoding-in-trie-pr-2353">Eliminating redundant RLP encoding in trie (PR #2353)</a></h1>
-<h2 id="summary"><a class="header" href="#summary">Summary</a></h2>
-<p>This PR addresses a performance bottleneck in our Merkle-Patricia Trie implementation caused by redundant RLP (Recursive Length Prefix) encoding operations. By refactoring the encoding logic to avoid double-encoding, we achieved <strong>1.5x–2x faster trie insertions</strong> for workloads of 1k and 10k nodes.</p>
-<h2 id="context"><a class="header" href="#context">Context</a></h2>
-<p>The trie structure is critical for Ethereum state management, and its performance directly impacts node synchronization and block processing times. RLP encoding is used extensively to serialize trie nodes for hashing and storage. Profiling revealed that a significant portion of insertion time was spent on unnecessary RLP re-encoding.</p>
-<h2 id="tools--methodology"><a class="header" href="#tools--methodology">Tools &amp; Methodology</a></h2>
-<h3 id="profiling-tools"><a class="header" href="#profiling-tools">Profiling Tools</a></h3>
+<h1 id="deposits"><a class="header" href="#deposits">Deposits</a></h1>
+<p>This document contains a detailed explanation of how asset deposits work.</p>
+<h2 id="native-eth-deposits"><a class="header" href="#native-eth-deposits">Native ETH deposits</a></h2>
+<p>This section explains step by step how native ETH deposits work.</p>
+<p>On L1:</p>
 <ol>
-<li><strong><a href="https://github.com/mstange/samply">Samply</a></strong>:
-<ul>
-<li>Sampled CPU usage during trie insertions, identifying RLP encoding as a hotspot (15% of runtime).</li>
-<li>Generated <a href="https://share.firefox.dev/43z7r8V">flamegraph</a> showing <code>encode_to_vec</code> taking a considerable amount of time.</li>
-</ul>
-</li>
-<li><strong>Cargo Bench</strong>:
-<ul>
-<li>Provided reproducible benchmarks for trie insertions (1k/10k nodes).</li>
-</ul>
-</li>
-</ol>
-<h3 id="benchmark-setup"><a class="header" href="#benchmark-setup">Benchmark Setup</a></h3>
-<ul>
 <li>
-<p><strong>Code Location</strong>: Benchmarks are defined in <code>crates/common/trie/benches/trie_bench.rs</code>.</p>
+<p>The user sends ETH to the <code>CommonBridge</code> contract.</p>
 </li>
 <li>
-<p><strong>How to Run</strong>:</p>
-<pre><code class="language-bash"># Navigate to the trie crate
-cd crates/common/trie
-
-# Run benchmarks (includes warmup and simple statistics with cargo-bench)
-make bench
+<p>The bridge adds the deposit's hash to the <code>pendingDepositLogs</code>.
+We explain how to compute this hash in <a href="#generic-l1-l2-messaging">"Generic L1-&gt;L2 messaging"</a></p>
+</li>
+<li>
+<p>The bridge emits a <code>DepositInitiated</code> event:</p>
+<pre><code class="language-solidity">emit DepositInitiated(
+    msg.value,   // amount
+    msg.sender,  // to
+    depositId,
+    msg.sender,  // recipient of the deposit
+    msg.sender,  // sender in L2
+    21000 * 5,   // gas limit
+    "",          // calldata
+    l2MintTxHash
+);
 </code></pre>
 </li>
-</ul>
-<h3 id="hardware"><a class="header" href="#hardware">Hardware</a></h3>
-<ul>
-<li><strong>Apple M3 Max</strong>: 14-core CPU, 36GB RAM, 1TB SSD.</li>
-</ul>
-<h2 id="benchmark-results"><a class="header" href="#benchmark-results">Benchmark Results</a></h2>
-<div class="table-wrapper"><table><thead><tr><th>Workload</th><th>Baseline (ms)</th><th>After PR #2353 (ms)</th></tr></thead><tbody>
-<tr><td>Insert 1k Nodes</td><td>9.96 – 10.02</td><td>5.78 – 5.82</td></tr>
-<tr><td>Insert 10k Nodes</td><td>111.2 – 111.6</td><td>67.6 – 68.6</td></tr>
-</tbody></table>
-</div>
-<h2 id="technical-breakdown"><a class="header" href="#technical-breakdown">Technical Breakdown</a></h2>
-<h3 id="issue-redundant-rlp-encoding"><a class="header" href="#issue-redundant-rlp-encoding">Issue: Redundant RLP Encoding</a></h3>
-<p>The original code calculated the length of an RLP-encoded sequence by:</p>
-<ol>
-<li>Encoding the entire structure to a temporary buffer.</li>
-<li>Measuring the buffer's length.</li>
-<li>Re-encoding the structure with the length prefix.</li>
 </ol>
-<p>This resulted in <strong>two full encoding passes</strong> for each time we needed to RLP-encode a structure.</p>
-<h3 id="fix-single-pass-encoding"><a class="header" href="#fix-single-pass-encoding">Fix: Single-Pass Encoding</a></h3>
-<p>We replaced the double-encoding logic with a single pass, and then
-appending the length as the size of the encoded buffer (number of bytes).</p>
+<p>Off-chain:</p>
+<ol>
+<li>On each L2 node, the L1 watcher processes <code>DepositInitiated</code> events, each adding a <code>PrivilegedL2Transaction</code> to the L2 mempool.</li>
+<li>The privileged transaction is an <a href="https://eips.ethereum.org/EIPS/eip-2718">EIP-2718 typed transaction</a>, somewhat similar to an <a href="https://eips.ethereum.org/EIPS/eip-1559">EIP-1559 transaction</a>, but with the following changes:
+<ol>
+<li>They don't have sender signatures. Those are validated in the L1, since the sender of the L1 deposit transaction is the sender in the L2.
+As a consequence of this, privileged transactions can also be sent from L1 contracts.</li>
+<li>At the start of the execution, the <code>recipient</code> account balance is increased by the transaction's value. The transaction's value is set to zero during the rest of the execution.</li>
+<li>The sender account's nonce isn't increased as a result of the execution.</li>
+<li>The sender isn't charged for the gas costs of the execution.</li>
+</ol>
+</li>
+</ol>
+<p>On L2:</p>
+<ol>
+<li>The privileged transaction increases the account balance of the recipient by the deposit amount.</li>
+<li>Additionally, a call to the sender address is executed, which immediately halts in case the sender is an EOA.
+In case the call reverts, changes from the execution are reverted as normal, but the initial balance increase is kept.</li>
+</ol>
+<p>Back on L1:</p>
+<ol>
+<li>A sequencer commits a batch on L1 including the privileged transaction.</li>
+<li>The <code>OnChainProposer</code> asserts the included privileged transactions exist and are included in order.</li>
+<li>The <code>OnChainProposer</code> notifies the bridge of the consumed privileged transactions and they are removed from <code>pendingDepositLogs</code>.</li>
+</ol>
+<pre class="mermaid">---
+title: User makes an ETH deposit
+---
+sequenceDiagram
+    box rgb(33,66,99) L1
+        actor L1Alice as Alice
+        participant CommonBridge
+        participant OnChainProposer
+    end
+
+    actor Sequencer
+
+    box rgb(139, 63, 63) L2
+        actor L2Alice as Alice
+    end
+
+    L1Alice-&gt;&gt;CommonBridge: sends 42 ETH
+    CommonBridge-&gt;&gt;CommonBridge: pendingDepositLogs.push(txHash)
+    CommonBridge-&gt;&gt;CommonBridge: emit DepositInitiated
+
+    CommonBridge--&gt;&gt;Sequencer: receives event
+    Sequencer-&gt;&gt;L2Alice: mints 42 ETH
+
+    Sequencer-&gt;&gt;OnChainProposer: publishes batch
+    OnChainProposer-&gt;&gt;CommonBridge: consumes pending deposits
+    CommonBridge--&gt;&gt;CommonBridge: pendingDepositLogs.pop()
+</pre>
+<h2 id="erc20-deposits-through-the-native-bridge"><a class="header" href="#erc20-deposits-through-the-native-bridge">ERC20 deposits through the native bridge</a></h2>
+<p>This section explains step by step how native ERC20 deposits work.</p>
+<p>On L1:</p>
+<ol>
+<li>
+<p>The user gives the <code>CommonBridge</code> allowance via an <code>approve</code> call to the L1 token contract.</p>
+</li>
+<li>
+<p>The user calls <code>depositERC20</code> on the bridge, specifying the L1 and L2 token addresses, the amount to deposit, along with the intended L2 recipient.</p>
+</li>
+<li>
+<p>The bridge locks the specified L1 token amount in the bridge, updating the mapping with the amount locked for the L1 and L2 token pair.
+This ensures that L2 token withdrawals don't consume L1 tokens that weren't deposited into that L2 token (see <a href="#why-store-the-provenance-of-bridged-tokens">"Why store the provenance of bridged tokens?"</a> for more information).</p>
+</li>
+<li>
+<p>The bridge emits a <code>DepositInitiated</code> event:</p>
+<pre><code class="language-solidity">emit DepositInitiated(
+    0,            // amount (unused)
+    0xffff,       // to (the L2 bridge)
+    depositId,
+    0,            // recipient of the ETH deposit (unused)
+    0xffff,       // sender in L2 (the L2 bridge)
+    gasLimit,     // gas limit
+    data,         // calldata
+    l2MintTxHash
+);
+</code></pre>
+</li>
+</ol>
+<p>On L2:</p>
+<ol>
+<li>The privileged transaction performs a call to <code>mintERC20</code> on the <code>CommonBridgeL2</code> from the L2 bridge's address, specifying the address of the L1 and L2 tokens, along with the amount and recipient.</li>
+<li>The bridge calls <code>crosschainMint</code> on the L2 token, minting the specified amount of tokens and sending them to the L2 recipient.</li>
+<li>If the call reverts, the L2 bridge automatically initiates a withdrawal.</li>
+</ol>
+<p>Back on L1:</p>
+<ol>
+<li>A sequencer commits a batch on L1 including the privileged transaction.</li>
+<li>The <code>OnChainProposer</code> asserts the included privileged transactions exist and are included in order.</li>
+<li>The <code>OnChainProposer</code> notifies the bridge of the consumed privileged transactions and they are removed from <code>pendingDepositLogs</code>.</li>
+</ol>
+<pre class="mermaid">---
+title: User makes an ERC20 deposit
+---
+sequenceDiagram
+    box rgb(33,66,99) L1
+        actor L1Alice as Alice
+        participant L1Token
+        participant CommonBridge
+        participant OnChainProposer
+    end
+
+    actor Sequencer
+
+    box rgb(139, 63, 63) L2
+        participant CommonBridgeL2
+        participant L2Token
+        actor L2Alice as Alice
+    end
+
+    L1Alice-&gt;&gt;L1Token: approves token transfer
+    L1Alice-&gt;&gt;CommonBridge: calls depositERC20
+    CommonBridge-&gt;&gt;CommonBridge: pendingDepositLogs.push(txHash)
+    CommonBridge-&gt;&gt;CommonBridge: emit DepositInitiated
+
+    CommonBridge--&gt;&gt;Sequencer: receives event
+    Sequencer--&gt;&gt;CommonBridgeL2: executes call &lt;br&gt;to mintERC20
+
+    CommonBridgeL2-&gt;&gt;L2Token: calls l1Address
+    L2Token-&gt;&gt;CommonBridgeL2: returns address of L1Token
+
+    CommonBridgeL2-&gt;&gt;L2Token: calls crosschainMint
+    L2Token--&gt;&gt;L2Alice: mints 42 tokens
+
+    Sequencer-&gt;&gt;OnChainProposer: publishes batch
+    OnChainProposer-&gt;&gt;CommonBridge: consumes pending deposits
+    CommonBridge--&gt;&gt;CommonBridge: pendingDepositLogs.pop()
+</pre>
+<h3 id="why-store-the-provenance-of-bridged-tokens"><a class="header" href="#why-store-the-provenance-of-bridged-tokens">Why store the provenance of bridged tokens?</a></h3>
+<p>As said before, storing the provenance of bridged tokens or, in other words, how many tokens were sent from each L1 token to each L2 token, ensures that L2 token withdrawals don't unlock L1 tokens that weren't deposited into another L2 token.</p>
+<p>This can be better understood with an example:</p>
+<pre class="mermaid">---
+title: Attacker exploits alternative bridge without token provenance
+---
+sequenceDiagram
+    box rgb(33,66,99) L1
+        actor L1Eve as Eve
+        actor L1Alice as Alice
+        participant CommonBridge
+    end
+
+    box rgb(139, 63, 63) L2
+        participant CommonBridgeL2
+        actor L2Alice as Alice
+        actor L2Eve as Eve
+    end
+
+    Note over L1Eve,L2Eve: Alice does a normal deposit
+    L1Alice -&gt;&gt; CommonBridge: Deposits 100 Foo tokens into FooL2
+    CommonBridge --&gt;&gt; CommonBridgeL2: Notifies deposit
+    CommonBridgeL2 -&gt;&gt; L2Alice: Sends 100 FooL2 tokens
+
+    Note over L1Eve,L2Eve: Eve does a deposit to ensure the L2 token they control is registered with the bridge
+    L1Eve -&gt;&gt; CommonBridge: Deposits 1 Foo token into Bar
+    CommonBridge --&gt;&gt; CommonBridgeL2: Notifies deposit
+    CommonBridgeL2 -&gt;&gt; L2Eve: Sends 1 Bar token
+
+    Note over L1Eve,L2Eve: Eve does a malicious withdawal of Alice's funds
+    L2Eve -&gt;&gt; CommonBridgeL2: Withdraws 101 Bar tokens into Foo
+    CommonBridgeL2 --&gt;&gt; CommonBridge: Notifies withdrawal
+    CommonBridge -&gt;&gt; L1Eve: Sends 101 Foo tokens
+</pre>
+<h2 id="generic-l1-l2-messaging"><a class="header" href="#generic-l1-l2-messaging">Generic L1-&gt;L2 messaging</a></h2>
+<!-- TODO: extend this version once we have generic L1->L2 messages -->
+<p>Privileged transactions are sent as a <code>DepositInitiated</code> event.</p>
+<pre><code class="language-solidity">emit DepositInitiated(
+    amount,
+    to,
+    depositId,
+    recipient,
+    from,
+    gasLimit,
+    calldata,
+    l2MintTxHash
+);
+</code></pre>
+<p>The <code>l2MintTxHash</code> is the hash of the privileged transaction, computed as follows:</p>
+<pre><code class="language-solidity">keccak256(
+    bytes.concat(
+        bytes20(to),
+        bytes32(value),
+        bytes32(depositId),
+        bytes20(recipient),
+        bytes20(from),
+        bytes32(gasLimit),
+        keccak256(calldata)
+    )
+)
+</code></pre>
 
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
-                            <a rel="prev" href="../perf_reports/index.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                            <a rel="prev" href="../l2/state_diffs.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                                 <i class="fa fa-angle-left"></i>
                             </a>
 
+                            <a rel="next prefetch" href="../l2/withdrawals.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
 
                         <div style="clear: both"></div>
                     </nav>
@@ -310,10 +475,13 @@ appending the length as the size of the encoded buffer (number of bytes).</p>
             </div>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
-                    <a rel="prev" href="../perf_reports/index.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                    <a rel="prev" href="../l2/state_diffs.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                         <i class="fa fa-angle-left"></i>
                     </a>
 
+                    <a rel="next prefetch" href="../l2/withdrawals.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
             </nav>
 
         </div>
