@@ -814,6 +814,55 @@ INFO ethrex_p2p::sync::trie_rebuild: State Trie Rebuild Progress: 68%, estimated
 <p>If you want to restart the sync from the very start you can do so by wiping the database using the following command:</p>
 <pre><code class="language-bash">cargo run --bin ethrex -- removedb
 </code></pre>
+<h2 id="ethereum-metrics-exporter"><a class="header" href="#ethereum-metrics-exporter">Ethereum Metrics Exporter</a></h2>
+<p>We use the <a href="https://github.com/ethpandaops/ethereum-metrics-exporter">Ethereum Metrics Exporter</a>, a Prometheus metrics exporter for Ethereum execution and consensus nodes, to gather metrics during syncing for L1. The exporter uses the prometheus data source to create a Grafana dashboard and display the metrics. For the syncing to work there must be a consensus node running along with the execution node.</p>
+<p>Currently we have two make targets to easily start an execution node and a consensus node on either hoodi or holesky, and display the syncing metrics. In both cases we use a lighthouse consensus node.</p>
+<h3 id="quickstart-guide"><a class="header" href="#quickstart-guide">Quickstart guide</a></h3>
+<p>Make sure you have your docker daemon running.</p>
+<ul>
+<li>
+<p><strong>Code Location</strong>: The targets are defined in <code>tooling/sync/Makefile</code>.</p>
+</li>
+<li>
+<p><strong>How to Run</strong>:</p>
+<pre><code class="language-bash"># Navigate to tooling/sync directory
+cd tooling/sync
+
+# Run target for hoodi 
+make start-hoodi-metrics-docker
+
+ # Run target for holesky 
+make start-holesky-metrics-docker
+</code></pre>
+</li>
+</ul>
+<p>To see the dashboards go to <a href="http://localhost:3001">http://localhost:3001</a>. Use “admin” for user and password. Select the Dashboards menu and go to Ethereum Metrics Exporter (Single) to see the exported metrics.</p>
+<p>To see the prometheus exported metrics and its respective requests with more detail in case you need to debug go to <a href="http://localhost:9093/metrics">http://localhost:9093/metrics</a>.</p>
+<h3 id="running-the-execution-node-on-other-networks-with-metrics-enabled"><a class="header" href="#running-the-execution-node-on-other-networks-with-metrics-enabled">Running the execution node on other networks with metrics enabled</a></h3>
+<p>A <code>docker-compose</code> is used to bundle prometheus and grafana services, the <code>*overrides</code> files define the ports and mounts the prometheus' configuration file.
+If a new dashboard is designed, it can be mounted only in that <code>*overrides</code> file.
+A consensus node must be running for the syncing to work.</p>
+<p>To run the execution node on any network with metrics, the next steps should be followed:</p>
+<ol>
+<li>
+<p>Build the <code>ethrex</code> binary for the network you want (see node options in <a href="l1/dev-setup-l1.html#cli-commands">CLI Commands</a>) with the <code>metrics</code> feature enabled.</p>
+</li>
+<li>
+<p>Enable metrics by using the <code>--metrics</code> flag when starting the node.</p>
+</li>
+<li>
+<p>Set the <code>--metrics.port</code> cli arg of the ethrex binary to match the port defined in <code>crates/blockchain/metrics/provisioning/prometheus/prometheus_l1_sync_docker.yaml</code></p>
+</li>
+<li>
+<p>Run the docker containers:</p>
+<pre><code class="language-bash"># Navigate to crates/blockchain/metrics directory
+cd crates/blockchain/metrics
+
+ docker compose -f docker-compose-metrics.yaml -f docker-compose-metrics-l1.overrides.yaml up
+</code></pre>
+</li>
+</ol>
+<p>For more details on running a sync go to <code>ethrex/tooling/sync/readme.md</code>.</p>
 <div style="break-before: page; page-break-before: always;"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/katex.min.css">
 <style>
 .mdbook-alerts {
@@ -1048,8 +1097,16 @@ INFO ethrex_p2p::sync::trie_rebuild: State Trie Rebuild Progress: 68%, estimated
 </ol>
 <p>For more information on how to run the L2 node with the prover attached to it, the <a href="l2/./prover.html">Prover Docs</a> provides more insight.</p>
 <h2 id="configuration"><a class="header" href="#configuration">Configuration</a></h2>
-<p>The program that deploys our L2 contracts outputs the addresses in a <code>.env</code> file, that includes environment information used by each component, automatically loaded by our makefile.
-Apart from these, each component accepts multiple configuration options, which can be configured either in the <code>.env</code>, or with CLI flags.
+<p>The program that deploys our L2 contracts outputs the addresses in a <code>.env</code> file, that includes environment information used by each component, automatically loaded by our makefile.</p>
+<div class="mdbook-alerts mdbook-alerts-note">
+<p class="mdbook-alerts-title">
+  <span class="mdbook-alerts-icon"></span>
+  note
+</p>
+<p>The deployer depends on the SDK, which conditionally compiles the proxy contract. For the proxy bytecode to be embedded, the <code>COMPILE_CONTRACTS</code> env var must be set during compilation.
+The <code>make init</code> command handles this automatically.</p>
+</div>
+<p>Apart from these, each component accepts multiple configuration options, which can be configured either in the <code>.env</code>, or with CLI flags.
 More information is available in <a href="l2/./components.html">the documentation for each component</a>.</p>
 <h2 id="guides"><a class="header" href="#guides">Guides</a></h2>
 <p>For more information on how to perform certain operations, go to <a href="l2/./guides">Guides</a>.</p>
@@ -1994,6 +2051,15 @@ We can compute it as follows:</p>
     )
 )
 </code></pre>
+<h2 id="address-aliasing"><a class="header" href="#address-aliasing">Address Aliasing</a></h2>
+<p>To prevent attacks where a L1 impersonates an L2 contract, we implement Address Aliasing <a href="https://docs.optimism.io/stack/differences#address-aliasing">like Optimism</a> (albeit with we a different constant, to prevent confusion).</p>
+<p>The attack prevented would've looked like this:</p>
+<ul>
+<li>An L2 contract gets deployed at address A</li>
+<li>Someone malicious deploys a contract at the same address (through deterministic deployments, etc)</li>
+<li>The malicious contract sends a privileged transaction, which can steal A's resourced on the L2</li>
+</ul>
+<p>By modifying the address of L1 contracts by adding a constant, we prevent this attack since both won't have the same address.</p>
 <div style="break-before: page; page-break-before: always;"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/katex.min.css">
 <style>
 .mdbook-alerts {
@@ -3065,7 +3131,8 @@ SP1_PROVER=cuda make build-prover PROVER=sp1 PROVER_CLIENT_ALIGNED=true
 </ul>
 <h3 id="2-deploying-l1-contracts"><a class="header" href="#2-deploying-l1-contracts">2. Deploying L1 Contracts</a></h3>
 <p>In a console with <code>ethrex/crates/l2</code> as the current directory, run the following command:</p>
-<pre><code class="language-bash">cargo run --release --bin ethrex_l2_l1_deployer --manifest-path contracts/Cargo.toml -- \
+<pre><code class="language-bash">COMPILE_CONTRACTS=true \ 
+cargo run --release --bin ethrex_l2_l1_deployer --manifest-path contracts/Cargo.toml -- \
 	--eth-rpc-url &lt;L1_RPC_URL&gt; \
 	--private-key &lt;L1_PRIVATE_KEY&gt; \
 	--genesis-l1-path &lt;GENESIS_L1_PATH&gt; \
@@ -3086,7 +3153,8 @@ SP1_PROVER=cuda make build-prover PROVER=sp1 PROVER_CLIENT_ALIGNED=true
   <span class="mdbook-alerts-icon"></span>
   note
 </p>
-<p>In this step we are initiallizing the <code>OnChainProposer</code> contract with the <code>ALIGNED_PROOF_AGGREGATOR_SERVICE_ADDRESS</code> and skipping the rest of verifiers.<br />
+<p>This command requires the COMPILE_CONTRACTS env variable to be set, as the deployer needs the SDK to embed the proxy bytecode.<br />
+In this step we are initiallizing the <code>OnChainProposer</code> contract with the <code>ALIGNED_PROOF_AGGREGATOR_SERVICE_ADDRESS</code> and skipping the rest of verifiers.<br />
 Save the addresses of the deployed proxy contracts, as you will need them to run the L2 node.</p>
 </div>
 <h3 id="3-deposit-funds-to-the-alignedbatcherpaymentservice-contract-from-the-proof-sender"><a class="header" href="#3-deposit-funds-to-the-alignedbatcherpaymentservice-contract-from-the-proof-sender">3. Deposit funds to the <code>AlignedBatcherPaymentService</code> contract from the proof sender</a></h3>
@@ -3205,7 +3273,8 @@ let ws_stream_future =
 <ol>
 <li>In another terminal, let's deploy the L1 contracts specifying the <code>AlignedProofAggregatorService</code> contract address:</li>
 </ol>
-<pre><code>cd ethrex/crates/l2
+<pre><code class="language-bash">cd ethrex/crates/l2
+COMPILE_CONTRACTS=true \ 
 cargo run --release --bin ethrex_l2_l1_deployer --manifest-path contracts/Cargo.toml -- \
 	--eth-rpc-url http://localhost:8545 \
 	--private-key 0x385c546456b6a603a1cfcaa9ec9494ba4832da08dd6bcf4de9a71e4a01b74924 \
@@ -3214,13 +3283,20 @@ cargo run --release --bin ethrex_l2_l1_deployer --manifest-path contracts/Cargo.
 	--sp1.verifier-address 0x00000000000000000000000000000000000000aa \
 	--tdx.verifier-address 0x00000000000000000000000000000000000000aa \
 	--aligned.aggregator-address 0xFD471836031dc5108809D173A067e8486B9047A3 \
-	--on-chain-proposer-owner 0x03d0a0aee676cc45bf7032649e0871927c947c8e \
-	--bridge-owner 0x03d0a0aee676cc45bf7032649e0871927c947c8e \
+	--on-chain-proposer-owner 0x4417092b70a3e5f10dc504d0947dd256b965fc62 \
+	--bridge-owner 0x4417092b70a3e5f10dc504d0947dd256b965fc62 \
 	--deposit-rich \
 	--private-keys-file-path ../../fixtures/keys/private_keys_l1.txt \
 	--genesis-l1-path ../../fixtures/genesis/l1-dev.json \
 	--genesis-l2-path ../../fixtures/genesis/l2.json
 </code></pre>
+<div class="mdbook-alerts mdbook-alerts-note">
+<p class="mdbook-alerts-title">
+  <span class="mdbook-alerts-icon"></span>
+  note
+</p>
+<p>This command requires the COMPILE_CONTRACTS env variable to be set, as the deployer needs the SDK to embed the proxy bytecode.</p>
+</div>
 <p>You will see that some deposits fail with the following error:</p>
 <pre><code>2025-06-18T19:19:24.066126Z  WARN ethrex_l2_l1_deployer: Failed to make deposits: Deployer EthClient error: eth_estimateGas request error: execution reverted: CommonBridge: amount to deposit is zero: CommonBridge: amount to deposit is zero
 </code></pre>
@@ -3987,7 +4063,7 @@ TODO: add updated graph with L1 block time distribution
 }
 
 </style>
-<h1 id="quickstart-guide"><a class="header" href="#quickstart-guide">Quickstart guide</a></h1>
+<h1 id="quickstart-guide-1"><a class="header" href="#quickstart-guide-1">Quickstart guide</a></h1>
 <p>This document covers how the code in the node is organized by looking at different end to end flows. If we start too high level we'll need to start at consensus, and if we start too low level, we'll need to start at the EVM. Let's start somewhere in the middle: importing blocks.</p>
 <h2 id="importing-blocks"><a class="header" href="#importing-blocks">Importing blocks</a></h2>
 <p>The simplest task a node can do is import blocks offline. We would do so like this:</p>
@@ -4325,6 +4401,161 @@ make load-test-io
 <h3 id="samply"><a class="header" href="#samply">Samply</a></h3>
 <p>To run with samply, run</p>
 <pre><code class="language-sh">samply record ./target/profiling/reth node --chain ../ethrex/fixtures/genesis/load-test.json --dev --dev.block-time 5000ms --http.port 1729
+</code></pre>
+<div style="break-before: page; page-break-before: always;"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/katex.min.css">
+<style>
+.mdbook-alerts {
+  padding: 8px 16px;
+  margin-bottom: 16px;
+  border-left: 0.25em solid var(--mdbook-alerts-color);
+}
+
+.mdbook-alerts > *:first-child {
+  margin-top: 0;
+}
+
+.mdbook-alerts > *:last-child {
+  margin-bottom: 0;
+}
+
+.mdbook-alerts-title {
+  display: flex;
+  font-weight: 600;
+  align-items: center;
+  line-height: 1;
+  color: var(--mdbook-alerts-color);
+  text-transform: capitalize;
+}
+
+.mdbook-alerts-icon {
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  margin-right: 0.2em;
+  background-color: currentColor;
+  -webkit-mask: no-repeat center / 100%;
+  mask: no-repeat center / 100%;
+  -webkit-mask-image: var(--mdbook-alerts-icon);
+  mask-image: var(--mdbook-alerts-icon);
+}
+
+.mdbook-alerts-note {
+  --mdbook-alerts-color: rgb(9, 105, 218);
+  /* https://icon-sets.iconify.design/material-symbols/info-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 17q.425 0 .713-.288T13 16v-4q0-.425-.288-.712T12 11q-.425 0-.712.288T11 12v4q0 .425.288.713T12 17m0-8q.425 0 .713-.288T13 8q0-.425-.288-.712T12 7q-.425 0-.712.288T11 8q0 .425.288.713T12 9m0 13q-2.075 0-3.9-.788t-3.175-2.137q-1.35-1.35-2.137-3.175T2 12q0-2.075.788-3.9t2.137-3.175q1.35-1.35 3.175-2.137T12 2q2.075 0 3.9.788t3.175 2.137q1.35 1.35 2.138 3.175T22 12q0 2.075-.788 3.9t-2.137 3.175q-1.35 1.35-3.175 2.138T12 22m0-2q3.35 0 5.675-2.325T20 12q0-3.35-2.325-5.675T12 4Q8.65 4 6.325 6.325T4 12q0 3.35 2.325 5.675T12 20m0-8"%2F%3E%3C%2Fsvg%3E');
+}
+
+.mdbook-alerts-tip {
+  --mdbook-alerts-color: rgb(26, 127, 55);
+  /* https://icon-sets.iconify.design/material-symbols/lightbulb-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 22q-.825 0-1.412-.587T10 20h4q0 .825-.587 1.413T12 22m-3-3q-.425 0-.712-.288T8 18q0-.425.288-.712T9 17h6q.425 0 .713.288T16 18q0 .425-.288.713T15 19zm-.75-3q-1.725-1.025-2.738-2.75T4.5 9.5q0-3.125 2.188-5.312T12 2q3.125 0 5.313 2.188T19.5 9.5q0 2.025-1.012 3.75T15.75 16zm.6-2h6.3q1.125-.8 1.738-1.975T17.5 9.5q0-2.3-1.6-3.9T12 4Q9.7 4 8.1 5.6T6.5 9.5q0 1.35.613 2.525T8.85 14M12 14"%2F%3E%3C%2Fsvg%3E');
+}
+
+.mdbook-alerts-important {
+  --mdbook-alerts-color: rgb(130, 80, 223);
+  /* https://icon-sets.iconify.design/material-symbols/chat-info-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 7q.425 0 .713-.288T13 6q0-.425-.288-.712T12 5q-.425 0-.712.288T11 6q0 .425.288.713T12 7m0 8q.425 0 .713-.288T13 14v-4q0-.425-.288-.712T12 9q-.425 0-.712.288T11 10v4q0 .425.288.713T12 15m-6 3l-2.3 2.3q-.475.475-1.088.213T2 19.575V4q0-.825.588-1.412T4 2h16q.825 0 1.413.588T22 4v12q0 .825-.587 1.413T20 18zm-.85-2H20V4H4v13.125zM4 16V4z"%2F%3E%3C%2Fsvg%3E');
+}
+
+.mdbook-alerts-warning {
+  --mdbook-alerts-color: rgb(154, 103, 0);
+  /* https://icon-sets.iconify.design/material-symbols/warning-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M2.725 21q-.275 0-.5-.137t-.35-.363q-.125-.225-.137-.488t.137-.512l9.25-16q.15-.25.388-.375T12 3q.25 0 .488.125t.387.375l9.25 16q.15.25.138.513t-.138.487q-.125.225-.35.363t-.5.137zm1.725-2h15.1L12 6zM12 18q.425 0 .713-.288T13 17q0-.425-.288-.712T12 16q-.425 0-.712.288T11 17q0 .425.288.713T12 18m0-3q.425 0 .713-.288T13 14v-3q0-.425-.288-.712T12 10q-.425 0-.712.288T11 11v3q0 .425.288.713T12 15m0-2.5"%2F%3E%3C%2Fsvg%3E');
+}
+
+.mdbook-alerts-caution {
+  --mdbook-alerts-color: rgb(207, 34, 46);
+  /* https://icon-sets.iconify.design/material-symbols/brightness-alert-outline-rounded/ */
+  --mdbook-alerts-icon: url('data:image/svg+xml,%3Csvg xmlns="http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg" width="24" height="24" viewBox="0 0 24 24"%3E%3Cpath fill="currentColor" d="M12 17q.425 0 .713-.288T13 16q0-.425-.288-.712T12 15q-.425 0-.712.288T11 16q0 .425.288.713T12 17m0-4q.425 0 .713-.288T13 12V8q0-.425-.288-.712T12 7q-.425 0-.712.288T11 8v4q0 .425.288.713T12 13m-3.35 7H6q-.825 0-1.412-.587T4 18v-2.65L2.075 13.4q-.275-.3-.425-.662T1.5 12q0-.375.15-.737t.425-.663L4 8.65V6q0-.825.588-1.412T6 4h2.65l1.95-1.925q.3-.275.663-.425T12 1.5q.375 0 .738.15t.662.425L15.35 4H18q.825 0 1.413.588T20 6v2.65l1.925 1.95q.275.3.425.663t.15.737q0 .375-.15.738t-.425.662L20 15.35V18q0 .825-.587 1.413T18 20h-2.65l-1.95 1.925q-.3.275-.662.425T12 22.5q-.375 0-.737-.15t-.663-.425zm.85-2l2.5 2.5l2.5-2.5H18v-3.5l2.5-2.5L18 9.5V6h-3.5L12 3.5L9.5 6H6v3.5L3.5 12L6 14.5V18zm2.5-6"%2F%3E%3C%2Fsvg%3E');
+}
+
+</style>
+<h1 id="ethrex-replay"><a class="header" href="#ethrex-replay">ethrex-replay</a></h1>
+<p>A tool for executing and proving Ethereum blocks, transactions, and L2 batches — inspired by <a href="https://github.com/lambdaclass/starknet-replay">starknet-replay</a>.</p>
+<h2 id="getting-started-1"><a class="header" href="#getting-started-1">Getting Started</a></h2>
+<blockquote>
+<p><strong>Note:</strong> All commands must be run from the <code>ethrex/cmd/ethrex_replay</code> directory.</p>
+</blockquote>
+<h3 id="dependencies"><a class="header" href="#dependencies">Dependencies</a></h3>
+<h4 id="risc0"><a class="header" href="#risc0"><a href="https://dev.risczero.com/api/zkvm/install">RISC0</a></a></h4>
+<pre><code class="language-sh">curl -L https://risczero.com/install | bash
+rzup install cargo-risczero 2.1.0
+rzup install rust
+</code></pre>
+<h4 id="sp1"><a class="header" href="#sp1"><a href="https://docs.succinct.xyz/docs/sp1/introduction">SP1</a></a></h4>
+<pre><code class="language-sh">curl -L https://sp1up.succinct.xyz | bash
+sp1up --version 5.0.0
+</code></pre>
+<h3 id="environment-variables"><a class="header" href="#environment-variables">Environment Variables</a></h3>
+<p>Before running any command, set the following environment variables depending on the operation:</p>
+<pre><code class="language-sh">export RPC_URL=&lt;RPC_URL&gt;
+export BLOCK_NUMBER=&lt;BLOCK_NUMBER&gt;
+export BATCH_NUMBER=&lt;BATCH_NUMBER&gt;
+export TX_HASH=&lt;TRANSACTION_HASH&gt;
+export START_BLOCK=&lt;START_BLOCK&gt;
+export END_BLOCK=&lt;END_BLOCK&gt;
+export NETWORK=&lt;mainnet|cancun|holesky|hoodi|sepolia|chainId&gt;
+export L2=true
+</code></pre>
+<h4 id="variable-descriptions"><a class="header" href="#variable-descriptions">Variable Descriptions</a></h4>
+<ul>
+<li><code>RPC_URL</code>: Ethereum JSON-RPC endpoint used to fetch on-chain data.</li>
+<li><code>BLOCK_NUMBER</code>: Block number to replay. If unset, the latest block will be used.</li>
+<li><code>BATCH_NUMBER</code>: L2 batch number to execute or prove.</li>
+<li><code>TX_HASH</code>: Hash of the transaction to replay.</li>
+<li><code>START_BLOCK</code> / <code>END_BLOCK</code>: Defines the block range to analyze and plot.</li>
+<li><code>NETWORK</code>: Logical network name or chain ID. Defaults to <code>mainnet</code>.</li>
+<li><code>L2</code>: Set to <code>true</code> to run transactions in L2 mode.</li>
+</ul>
+<blockquote>
+<p>You only need to set the variables required by the command you're running.</p>
+</blockquote>
+<hr />
+<h2 id="running-examples"><a class="header" href="#running-examples">Running Examples</a></h2>
+<h3 id="execute-a-single-block-no-proving"><a class="header" href="#execute-a-single-block-no-proving">Execute a single block (no proving)</a></h3>
+<p>Required: <code>RPC_URL</code>.
+Optionally: <code>BLOCK_NUMBER</code>, <code>NETWORK</code></p>
+<pre><code class="language-sh">make sp1           # SP1 (CPU)
+make sp1-gpu       # SP1 (GPU)
+make risc0         # RISC0 (CPU)
+make risc0-gpu     # RISC0 (GPU)
+</code></pre>
+<h3 id="prove-a-single-block"><a class="header" href="#prove-a-single-block">Prove a single block</a></h3>
+<p>Required: <code>RPC_URL</code>.
+Optionally: <code>BLOCK_NUMBER</code>, <code>NETWORK</code>.</p>
+<pre><code class="language-sh">make prove-sp1
+make prove-sp1-gpu
+make prove-risc0
+make prove-risc0-gpu
+</code></pre>
+<h3 id="execute-an-l2-batch-no-proving"><a class="header" href="#execute-an-l2-batch-no-proving">Execute an L2 batch (no proving)</a></h3>
+<p>Required: <code>RPC_URL</code>, <code>BATCH_NUMBER</code>, <code>NETWORK</code>.</p>
+<pre><code class="language-sh">make batch-sp1
+make batch-sp1-gpu
+make batch-risc0
+make batch-risc0-gpu
+</code></pre>
+<h3 id="prove-an-l2-batch"><a class="header" href="#prove-an-l2-batch">Prove an L2 batch</a></h3>
+<p>Required: <code>RPC_URL</code>, <code>BATCH_NUMBER</code>, <code>NETWORK</code>.</p>
+<pre><code class="language-sh">make prove-batch-sp1
+make prove-batch-sp1-gpu
+make prove-batch-risc0
+make prove-batch-risc0-gpu
+</code></pre>
+<h3 id="execute-a-transaction"><a class="header" href="#execute-a-transaction">Execute a transaction</a></h3>
+<p>Required: <code>RPC_URL</code>, <code>TX_HASH</code>, <code>NETWORK</code>.
+Optionally: <code>L2=true</code> (if the transaction is L2-specific)</p>
+<pre><code class="language-sh">make transaction
+</code></pre>
+<h3 id="plot-block-composition"><a class="header" href="#plot-block-composition">Plot block composition</a></h3>
+<p>Required: <code>RPC_URL</code>, <code>START_BLOCK</code>, <code>END_BLOCK</code>.
+Optionally: <code>NETWORK</code></p>
+<pre><code class="language-sh">make plot
+</code></pre>
+<hr />
+<h2 id="check-all-available-commands"><a class="header" href="#check-all-available-commands">Check All Available Commands</a></h2>
+<p>Run:</p>
+<pre><code class="language-sh">make help
 </code></pre>
 <div style="break-before: page; page-break-before: always;"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/katex.min.css">
 <style>
