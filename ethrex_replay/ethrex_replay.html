@@ -3,7 +3,7 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>Replay - Ethrex</title>
+        <title>Re-execute Ethereum with ethrex - Ethrex</title>
 
 
         <!-- Custom HTML head -->
@@ -238,7 +238,8 @@
 
 </style>
 <h1 id="ethrex-replay"><a class="header" href="#ethrex-replay">ethrex-replay</a></h1>
-<p>A tool for executing and proving Ethereum blocks, transactions, and L2 batches — inspired by <a href="https://github.com/lambdaclass/starknet-replay">starknet-replay</a>.</p>
+<p>A tool for executing and proving Ethereum blocks, transactions, and L2 batches — inspired by <a href="https://github.com/lambdaclass/starknet-replay">starknet-replay</a>.
+Currently ethrex replay only works against ethrex nodes with the <code>debug_executionWitness</code> RPC endpoint.</p>
 <h2 id="getting-started"><a class="header" href="#getting-started">Getting Started</a></h2>
 <blockquote>
 <p><strong>Note:</strong> All commands must be run from the <code>ethrex/cmd/ethrex_replay</code> directory.</p>
@@ -246,12 +247,12 @@
 <h3 id="dependencies"><a class="header" href="#dependencies">Dependencies</a></h3>
 <h4 id="risc0"><a class="header" href="#risc0"><a href="https://dev.risczero.com/api/zkvm/install">RISC0</a></a></h4>
 <pre><code class="language-sh">curl -L https://risczero.com/install | bash
-rzup install cargo-risczero 2.1.0
+rzup install cargo-risczero 2.3.1
 rzup install rust
 </code></pre>
 <h4 id="sp1"><a class="header" href="#sp1"><a href="https://docs.succinct.xyz/docs/sp1/introduction">SP1</a></a></h4>
 <pre><code class="language-sh">curl -L https://sp1up.succinct.xyz | bash
-sp1up --version 5.0.0
+sp1up --version 5.0.8
 </code></pre>
 <h3 id="environment-variables"><a class="header" href="#environment-variables">Environment Variables</a></h3>
 <p>Before running any command, set the following environment variables depending on the operation:</p>
@@ -329,11 +330,11 @@ Optionally: <code>NETWORK</code></p>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
-                            <a rel="prev" href="../developers/l2/load_tests.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                            <a rel="prev" href="../vm/levm/debug.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                                 <i class="fa fa-angle-left"></i>
                             </a>
 
-                            <a rel="next prefetch" href="../CONTRIBUTING_DOCS.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <a rel="next prefetch" href="../ethrex_replay/profiling.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <i class="fa fa-angle-right"></i>
                             </a>
 
@@ -343,11 +344,11 @@ Optionally: <code>NETWORK</code></p>
             </div>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
-                    <a rel="prev" href="../developers/l2/load_tests.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                    <a rel="prev" href="../vm/levm/debug.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                         <i class="fa fa-angle-left"></i>
                     </a>
 
-                    <a rel="next prefetch" href="../CONTRIBUTING_DOCS.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                    <a rel="next prefetch" href="../ethrex_replay/profiling.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <i class="fa fa-angle-right"></i>
                     </a>
             </nav>

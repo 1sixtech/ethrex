@@ -3,7 +3,7 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>Getting started - Ethrex</title>
+        <title>Profiling zkvm execution with ethrex replay - Ethrex</title>
 
 
         <!-- Custom HTML head -->
@@ -237,45 +237,55 @@
 }
 
 </style>
-<h1 id="ethrex-l2"><a class="header" href="#ethrex-l2">Ethrex L2</a></h1>
-<p>In this mode, the ethrex code is repurposed to run a rollup that settles on Ethereum as the L1.</p>
-<p>The main differences between this mode and regular ethrex are:</p>
-<ul>
-<li>In regular rollup mode, there is no consensus; the node is turned into a sequencer that proposes blocks for the chain. In based rollup mode, consensus is achieved by a mechanism that rotates sequencers, enforced by the L1.</li>
-<li>Block execution is proven using a RISC-V zkVM (or attested to using TDX, a Trusted Execution Environment) and its proofs (or signatures/attestations) are sent to L1 for verification.</li>
-<li>A set of Solidity contracts to be deployed to the L1 are included as part of chain initialization.</li>
-<li>Two new types of transactions are included: deposits (native token mints) and withdrawals.</li>
-</ul>
-<p>At a high level, the following new parts are added to the node:</p>
-<ul>
-<li>A <code>proposer</code> component, in charge of continually creating new blocks from the mempool transactions. This replaces the regular flow that an Ethereum L1 node has, where new blocks come from the consensus layer through the <code>forkChoiceUpdate</code> -&gt; <code>getPayload</code> -&gt; <code>NewPayload</code> Engine API flow in communication with the consensus layer.</li>
-<li>A <code>prover</code> subsystem, which itself consists of two parts:
-<ul>
-<li>A <code>proverClient</code> that takes new blocks from the node, proves them, then sends the proof back to the node to send to the L1. This is a separate binary running outside the node, as proving has very different (and higher) hardware requirements than the sequencer.</li>
-<li>A <code>proverServer</code> component inside the node that communicates with the prover, sending witness data for proving and receiving proofs for settlement on L1.</li>
-</ul>
-</li>
-<li>L1 contracts with functions to commit to new state and then verify the state transition function, only advancing the state of the L2 if the proof verifies. It also has functionality to process deposits and withdrawals to/from the L2.</li>
-<li>The EVM is lightly modified with new features to process deposits and withdrawals accordingly.</li>
-</ul>
-<h2 id="ethrex-l2-documentation"><a class="header" href="#ethrex-l2-documentation">Ethrex L2 documentation</a></h2>
-<p>For general documentation, see:</p>
-<ul>
-<li><a href="./overview.html">General overview</a> for a high-level view of the ethrex L2 stack.</li>
-<li><a href="./fundamentals/contracts.html">Smart contracts</a> has information on L1 and L2 smart contracts.</li>
-<li><a href="./fundamentals/components/components.html">Components</a> for more detailed documentation on each off-chain component.</li>
-<li><a href="./based/roadmap.html">Based roadmap (draft)</a> contains ethrex's roadmap for becoming based.</li>
-</ul>
+<h1 id="profiling-zkvms-with-ethrex-replay"><a class="header" href="#profiling-zkvms-with-ethrex-replay">Profiling zkvms with ethrex-replay</a></h1>
+<h2 id="getting-started"><a class="header" href="#getting-started">Getting started</a></h2>
+<p>Before reading this document please take a look the general documentation for <a href="./ethrex_replay.html">ethrex-replay</a></p>
+<h3 id="dependencies"><a class="header" href="#dependencies">Dependencies</a></h3>
+<h4 id="for-sp1"><a class="header" href="#for-sp1">For SP1</a></h4>
+<p>The easiest way is to use cargo but other options are listed in the <a href="https://github.com/mstange/samply">samply repo</a></p>
+<pre><code>cargo install --locked samply
+</code></pre>
+<h4 id="for-risc0"><a class="header" href="#for-risc0">For risc0</a></h4>
+<p>Install go by following the instructions from <a href="https://go.dev/doc/install">go install page</a></p>
+<h3 id="generate-a-profile"><a class="header" href="#generate-a-profile">Generate a profile</a></h3>
+<h4 id="for-sp1-1"><a class="header" href="#for-sp1-1">For SP1</a></h4>
+<p><strong>Profile a L1 block</strong>:</p>
+<p>Required: <code>RPC_URL</code>.
+Optionally: <code>BLOCK_NUMBER</code>, <code>NETWORK</code>.</p>
+<pre><code class="language-sh">make profile-sp1
+</code></pre>
+<p><strong>Profile a L2 batch</strong>:</p>
+<p>Required: <code>RPC_URL</code>, <code>BATCH_NUMBER</code>, <code>NETWORK</code>.</p>
+<pre><code class="language-sh">make profile-batch-sp1
+</code></pre>
+<p><strong>Open samply profile</strong></p>
+<pre><code class="language-sh">samply load output.json
+</code></pre>
+<p>Then visit http://localhost:8000/ on your browser</p>
+<h4 id="for-risc0-1"><a class="header" href="#for-risc0-1">For risc0</a></h4>
+<p><strong>Profile a L1 block</strong>:</p>
+<p>Required: <code>RPC_URL</code>.
+Optionally: <code>BLOCK_NUMBER</code>, <code>NETWORK</code>.</p>
+<pre><code class="language-sh">make profile-risc0
+</code></pre>
+<p><strong>Profile a L2 batch</strong>:</p>
+<p>Required: <code>RPC_URL</code>, <code>BATCH_NUMBER</code>, <code>NETWORK</code>.</p>
+<pre><code class="language-sh">make profile-batch-risc0
+</code></pre>
+<p><strong>Open pprof profile</strong></p>
+<pre><code class="language-sh">go tool pprof -http=127.0.0.1:8000 profile.pb
+</code></pre>
+<p>Then visit http://localhost:8000/ on your browser</p>
 
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
-                            <a rel="prev" href="../l1/fundamentals/sync_modes.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                            <a rel="prev" href="../ethrex_replay/ethrex_replay.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                                 <i class="fa fa-angle-left"></i>
                             </a>
 
-                            <a rel="next prefetch" href="../l2/running.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <a rel="next prefetch" href="../CLI.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <i class="fa fa-angle-right"></i>
                             </a>
 
@@ -285,11 +295,11 @@
             </div>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
-                    <a rel="prev" href="../l1/fundamentals/sync_modes.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                    <a rel="prev" href="../ethrex_replay/ethrex_replay.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                         <i class="fa fa-angle-left"></i>
                     </a>
 
-                    <a rel="next prefetch" href="../l2/running.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                    <a rel="next prefetch" href="../CLI.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <i class="fa fa-angle-right"></i>
                     </a>
             </nav>
