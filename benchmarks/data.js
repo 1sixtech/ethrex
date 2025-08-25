@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1755676058100,
+  "lastUpdate": 1756128079990,
   "repoUrl": "https://github.com/1sixtech/ethrex",
   "entries": {
     "Benchmark": [
@@ -89,6 +89,36 @@ window.BENCHMARK_DATA = {
             "name": "Block import/Block import ERC20 transfers",
             "value": 162810195723,
             "range": "± 434733353",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "git@edgl.dev",
+            "name": "Edgar",
+            "username": "edg-l"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "8c312705f4295279dad3297c1f0630fbd66685de",
+          "message": "perf(levm): improve load_range by returning a Bytes directly, avoding a vec (#4098)\n\n**Motivation**\n\nAll load range usage leads to creating a Bytes, but to do so we allocate\na intermediate vec, this pr avoids this.\n\nimprove load_range by returning a Bytes directly, avoding a vec\n\n---------\n\nCo-authored-by: Mario Rugiero <mrugiero@gmail.com>",
+          "timestamp": "2025-08-25T09:02:40Z",
+          "tree_id": "b43426d32c02a260b64897801aef39417d83da9c",
+          "url": "https://github.com/1sixtech/ethrex/commit/8c312705f4295279dad3297c1f0630fbd66685de"
+        },
+        "date": 1756128078357,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "Block import/Block import ERC20 transfers",
+            "value": 160198407314,
+            "range": "± 283138683",
             "unit": "ns/iter"
           }
         ]
