@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1756128079990,
+  "lastUpdate": 1756957470529,
   "repoUrl": "https://github.com/1sixtech/ethrex",
   "entries": {
     "Benchmark": [
@@ -119,6 +119,36 @@ window.BENCHMARK_DATA = {
             "name": "Block import/Block import ERC20 transfers",
             "value": 160198407314,
             "range": "± 283138683",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "67517699+ilitteri@users.noreply.github.com",
+            "name": "Ivan Litteri",
+            "username": "ilitteri"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "5c0681db9dc344138192c793b88fadf7db1fcb46",
+          "message": "refactor(l2): prover crate (#3800)\n\n**Description**\n\nRefactors the prover crate\n\n---------\n\nCo-authored-by: Copilot <175728472+Copilot@users.noreply.github.com>",
+          "timestamp": "2025-09-03T22:13:33Z",
+          "tree_id": "380745ee7fafc41c3fff02fd68ce87929d31bed8",
+          "url": "https://github.com/1sixtech/ethrex/commit/5c0681db9dc344138192c793b88fadf7db1fcb46"
+        },
+        "date": 1756957468368,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "Block import/Block import ERC20 transfers",
+            "value": 168594276787,
+            "range": "± 1090177929",
             "unit": "ns/iter"
           }
         ]
