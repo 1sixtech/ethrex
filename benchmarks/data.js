@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1756957470529,
+  "lastUpdate": 1757054481166,
   "repoUrl": "https://github.com/1sixtech/ethrex",
   "entries": {
     "Benchmark": [
@@ -149,6 +149,36 @@ window.BENCHMARK_DATA = {
             "name": "Block import/Block import ERC20 transfers",
             "value": 168594276787,
             "range": "± 1090177929",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "49622509+jrchatruc@users.noreply.github.com",
+            "name": "Javier Rodríguez Chatruc",
+            "username": "jrchatruc"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "34627b89752faf652f3b60cfb75fdc22a112c2e1",
+          "message": "chore(l1): lower snap sync chunk file size and move it to a constant variable (#4328)\n\n**Motivation**\n\n<!-- Why does this pull request exist? What are its goals? -->\n\n**Description**\n\n<!-- A clear and concise general description of the changes this PR\nintroduces -->\n\n<!-- Link to issues: Resolves #111, Resolves #222 -->\n\nCloses #issue_number",
+          "timestamp": "2025-09-04T22:03:59Z",
+          "tree_id": "a60844b65cb1cc6a919437e1dec4dcc18e6cf95d",
+          "url": "https://github.com/1sixtech/ethrex/commit/34627b89752faf652f3b60cfb75fdc22a112c2e1"
+        },
+        "date": 1757054479164,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "Block import/Block import ERC20 transfers",
+            "value": 168172323433,
+            "range": "± 436855219",
             "unit": "ns/iter"
           }
         ]
