@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1757054481166,
+  "lastUpdate": 1757430755276,
   "repoUrl": "https://github.com/1sixtech/ethrex",
   "entries": {
     "Benchmark": [
@@ -179,6 +179,36 @@ window.BENCHMARK_DATA = {
             "name": "Block import/Block import ERC20 transfers",
             "value": 168172323433,
             "range": "± 436855219",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "iovoid@users.noreply.github.com",
+            "name": "Lucas Fiegl",
+            "username": "iovoid"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "c356adc73e2ae50a465cdb1f0090d3d3e1b86323",
+          "message": "feat(l1): only track state root of big accounts (#4262)\n\n**Motivation**\n\nWhen inserting storages ranges during snap sync, we keep track of the\nstorage root to insert to the same tree as we go from one chunk to\nanother. We don't need to keep track if the state root is already\ncomplete.\n\n**Description**\n\nThis PR only updates maybe_big_account_storage_state_roots if the\naccount is, in fact, big (couldn't be fetched in a single batch).",
+          "timestamp": "2025-09-09T13:44:16Z",
+          "tree_id": "14a74fb69b7486c74720f42d563ab7f3fbe2c560",
+          "url": "https://github.com/1sixtech/ethrex/commit/c356adc73e2ae50a465cdb1f0090d3d3e1b86323"
+        },
+        "date": 1757430752391,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "Block import/Block import ERC20 transfers",
+            "value": 168549883501,
+            "range": "± 1107646178",
             "unit": "ns/iter"
           }
         ]
