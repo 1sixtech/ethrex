@@ -1,3 +1,5 @@
+use crate::rlpx::connection::server::CastMessage;
+use crate::rlpx::error::RLPxError;
 use crate::{
     discv4::{
         server::{DiscoveryServer, DiscoveryServerError},
@@ -11,7 +13,7 @@ use crate::{
         initiator::{RLPxInitiator, RLPxInitiatorError},
         l2::l2_connection::P2PBasedContext,
         message::Message,
-        p2p::SUPPORTED_SNAP_CAPABILITIES,
+        p2p::{Capability, SUPPORTED_ETH_CAPABILITIES, SUPPORTED_SNAP_CAPABILITIES},
     },
     tx_broadcaster::{TxBroadcaster, TxBroadcasterError},
     types::{Node, NodeRecord},
@@ -80,6 +82,84 @@ impl P2PContext {
             client_version,
             based_context,
         }
+    }
+
+    pub async fn broadcast_message(&self, msg: Message) -> Result<(), RLPxError> {
+        let peers = self.table.get_peer_channels_with_capabilities(&[]).await;
+        for (peer_id, mut peer_channels, capabilities) in peers {
+            if peer_supports_message(&capabilities, &msg) {
+                if let Err(err) = peer_channels
+                    .connection
+                    .cast(CastMessage::BackendMessage(msg.clone()))
+                    .await
+                {
+                    tracing::error!(
+                        peer_id = %format!("{:#x}", peer_id),
+                        err = ?err,
+                        "Failed to broadcast message to peer"
+                    );
+                }
+            }
+        }
+        Ok(())
+    }
+
+    pub async fn send_to_peer(&self, peer_id: H256, msg: Message) -> Result<(), RLPxError> {
+        let maybe = self
+            .table
+            .get_peer_channels_with_capabilities(&[])
+            .await
+            .into_iter()
+            .find(|(id, _, _)| *id == peer_id);
+        let Some((_, mut peer_channels, capabilities)) = maybe else {
+            return Err(RLPxError::NotFound(format!("peer {:#x}", peer_id)));
+        };
+        if !peer_supports_message(&capabilities, &msg) {
+            return Err(RLPxError::BadRequest(
+                "Peer does not support required capability".to_string(),
+            ));
+        }
+        peer_channels
+            .connection
+            .cast(CastMessage::BackendMessage(msg))
+            .await
+            .map_err(|e| RLPxError::SendMessage(e.to_string()))?;
+        Ok(())
+    }
+
+    pub async fn send_to_peers<I>(&self, peers: I, msg: Message) -> Result<(), RLPxError>
+    where
+        I: IntoIterator<Item = H256>,
+    {
+        let by_id: BTreeMap<_, _> = self
+            .table
+            .get_peer_channels_with_capabilities(&[])
+            .await
+            .into_iter()
+            .map(|(id, ch, caps)| (id, (ch, caps)))
+            .collect();
+        for peer_id in peers {
+            if let Some((mut peer_channels, caps)) = by_id.get(&peer_id).cloned() {
+                if peer_supports_message(&caps, &msg) {
+                    if let Err(err) = peer_channels
+                        .connection
+                        .cast(CastMessage::BackendMessage(msg.clone()))
+                        .await
+                    {
+                        tracing::error!(
+                            peer_id = %format!("{:#x}", peer_id),
+                            err = ?err,
+                            "Failed to send message to peer"
+                        );
+                    }
+                } else {
+                    tracing::debug!(peer_id = %format!("{:#x}", peer_id), "Skipping peer without required capability");
+                }
+            } else {
+                tracing::debug!(peer_id = %format!("{:#x}", peer_id), "Peer not found while sending");
+            }
+        }
+        Ok(())
     }
 }
 
@@ -180,6 +260,44 @@ fn listener(tcp_addr: SocketAddr) -> Result<TcpListener, io::Error> {
     }?;
     tcp_socket.bind(tcp_addr)?;
     tcp_socket.listen(50)
+}
+
+/// Returns whether a peer with the given capabilities supports the provided message.
+fn peer_supports_message(caps: &[Capability], msg: &Message) -> bool {
+    match msg {
+        // Base p2p (hello/ping/pong/disconnect) is always allowed
+        Message::Hello(_) | Message::Disconnect(_) | Message::Ping(_) | Message::Pong(_) => true,
+        // eth subprotocol
+        Message::Status(_)
+        | Message::GetBlockHeaders(_)
+        | Message::BlockHeaders(_)
+        | Message::Transactions(_)
+        | Message::GetBlockBodies(_)
+        | Message::BlockBodies(_)
+        | Message::NewPooledTransactionHashes(_)
+        | Message::GetPooledTransactions(_)
+        | Message::PooledTransactions(_)
+        | Message::GetReceipts(_)
+        | Message::Receipts(_)
+        | Message::BlockRangeUpdate(_) => SUPPORTED_ETH_CAPABILITIES
+            .iter()
+            .any(|required| caps.contains(required)),
+        // snap subprotocol
+        Message::GetAccountRange(_)
+        | Message::AccountRange(_)
+        | Message::GetStorageRanges(_)
+        | Message::StorageRanges(_)
+        | Message::GetByteCodes(_)
+        | Message::ByteCodes(_)
+        | Message::GetTrieNodes(_)
+        | Message::TrieNodes(_) => SUPPORTED_SNAP_CAPABILITIES
+            .iter()
+            .any(|required| caps.contains(required)),
+        // based (L2) custom capability: check by protocol name
+        Message::L2(_) => caps.iter().any(|c| c.protocol() == "based"),
+        // extension messages: require capability name to be present
+        Message::Ext(ext) => caps.iter().any(|c| c.protocol() == ext.capability),
+    }
 }
 
 pub async fn periodically_show_peer_stats(

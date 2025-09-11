@@ -17,6 +17,7 @@ use super::eth::update::BlockRangeUpdate;
 use super::l2::messages::{BatchSealed, L2Message, NewBlock};
 use super::l2::{self, messages};
 use super::p2p::{DisconnectMessage, HelloMessage, PingMessage, PongMessage};
+use super::extensions;
 
 use ethrex_rlp::encode::RLPEncode;
 
@@ -63,10 +64,12 @@ pub enum Message {
     TrieNodes(TrieNodes),
     // based capability
     L2(messages::L2Message),
+    // dynamic extension messages
+    Ext(extensions::ExtMessage),
 }
 
 impl Message {
-    pub const fn code(&self) -> u8 {
+    pub fn code(&self) -> u8 {
         match self {
             Message::Hello(_) => HelloMessage::CODE,
             Message::Disconnect(_) => DisconnectMessage::CODE,
@@ -109,6 +112,7 @@ impl Message {
                     }
                 }
             }
+            Message::Ext(ext) => extensions::ext_msg_id(ext),
         }
     }
     pub fn decode(msg_id: u8, data: &[u8]) -> Result<Message, RLPDecodeError> {
@@ -166,6 +170,8 @@ impl Message {
                 TrieNodes::CODE => Ok(Message::TrieNodes(TrieNodes::decode(data)?)),
                 _ => Err(RLPDecodeError::MalformedData),
             }
+        } else if let Some(ext) = extensions::try_decode_ext(msg_id, data) {
+            Ok(Message::Ext(ext))
         } else {
             // based capability
             Ok(Message::L2(match msg_id - BASED_CAPABILITY_OFFSET {
@@ -213,6 +219,7 @@ impl Message {
                 L2Message::BatchSealed(msg) => msg.encode(buf),
                 L2Message::NewBlock(msg) => msg.encode(buf),
             },
+            Message::Ext(ext) => ext.encode(buf),
         }
     }
 }
@@ -248,6 +255,7 @@ impl Display for Message {
                 L2Message::BatchSealed(_) => "based:BatchSealed".fmt(f),
                 L2Message::NewBlock(_) => "based:NewBlock".fmt(f),
             },
+            Message::Ext(ext) => format!("{}:{:#04x}", ext.capability, ext.code).fmt(f),
         }
     }
 }

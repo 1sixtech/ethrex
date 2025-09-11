@@ -36,6 +36,7 @@ futures = "0.3.31"
 sha3 = "0.10.8"
 
 serde_json = "1.0.117"
+once_cell.workspace = true
 
 # RLPx
 concat-kdf = "0.1.0"

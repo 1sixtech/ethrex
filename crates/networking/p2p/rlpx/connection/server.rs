@@ -41,6 +41,7 @@ use crate::{
             transactions::{GetPooledTransactions, NewPooledTransactionHashes},
             update::BlockRangeUpdate,
         },
+        extensions,
         l2::{
             self, PERIODIC_BATCH_BROADCAST_INTERVAL, PERIODIC_BLOCK_BROADCAST_INTERVAL,
             l2_connection::{
@@ -609,6 +610,7 @@ where
     if state.l2_state.is_supported() {
         supported_capabilities.push(l2::SUPPORTED_BASED_CAPABILITIES[0].clone());
     }
+    supported_capabilities.extend(crate::rlpx::extensions::registered_capabilities());
     let hello_msg = Message::Hello(p2p::HelloMessage::new(
         supported_capabilities,
         PublicKey::from_secret_key(secp256k1::SECP256K1, &state.signer),
@@ -840,6 +842,13 @@ async fn handle_peer_message(state: &mut Established, message: Message) -> Resul
         }
         Message::L2(req) if peer_supports_l2 => {
             handle_based_capability_message(state, req).await?;
+        }
+        Message::Ext(ext) => {
+            let peer_id = state.node.node_id();
+            extensions::publish_inbound(extensions::ExtInbound {
+                peer_id,
+                message: ext,
+            });
         }
         // Send response messages to the backend
         message @ Message::AccountRange(_)

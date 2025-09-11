@@ -4214,6 +4214,7 @@ dependencies = [
  "hmac",
  "keccak-hash",
  "lazy_static",
+ "once_cell",
  "prometheus 0.14.0",
  "rand 0.8.5",
  "rayon",
@@ -7665,6 +7666,47 @@ dependencies = [
  "elliptic-curve",
  "primeorder",
  "sha2",
+]
+
+[[package]]
+name = "p2p-ext-client"
+version = "0.1.0"
+dependencies = [
+ "clap 4.5.47",
+ "ethrex-blockchain",
+ "ethrex-common",
+ "ethrex-p2p",
+ "ethrex-rlp",
+ "ethrex-storage",
+ "eyre",
+ "hex",
+ "rand 0.8.5",
+ "secp256k1",
+ "serde_json",
+ "tokio",
+ "tokio-util",
+ "tracing",
+ "tracing-subscriber 0.3.20",
+]
+
+[[package]]
+name = "p2p-ext-server"
+version = "0.1.0"
+dependencies = [
+ "clap 4.5.47",
+ "ethrex-blockchain",
+ "ethrex-common",
+ "ethrex-p2p",
+ "ethrex-rlp",
+ "ethrex-storage",
+ "eyre",
+ "rand 0.8.5",
+ "secp256k1",
+ "serde_json",
+ "tokio",
+ "tokio-util",
+ "tracing",
+ "tracing-subscriber 0.3.20",
 ]
 
 [[package]]

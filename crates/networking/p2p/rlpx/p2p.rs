@@ -3,6 +3,7 @@ use super::{
     utils::{decompress_pubkey, snappy_compress},
 };
 use crate::rlpx::utils::{compress_pubkey, snappy_decompress};
+use crate::rlpx::error::RLPxError;
 use bytes::BufMut;
 use ethrex_common::H512;
 use ethrex_rlp::structs::{Decoder, Encoder};
@@ -76,6 +77,16 @@ impl Capability {
             .position(|c| c == &b'\0')
             .unwrap_or(CAPABILITY_NAME_MAX_LENGTH);
         str::from_utf8(&self.protocol[..len]).expect("value parsed as utf8 in RLPDecode")
+    }
+
+    pub fn custom(name: &str, version: u8) -> Result<Self, RLPxError> {
+        let bytes = name.as_bytes();
+        if bytes.len() > CAPABILITY_NAME_MAX_LENGTH {
+            return Err(RLPxError::BadRequest("Capability name too long".to_string()));
+        }
+        let mut protocol = [0u8; CAPABILITY_NAME_MAX_LENGTH];
+        protocol[..bytes.len()].copy_from_slice(bytes);
+        Ok(Capability { protocol, version })
     }
 }
 
