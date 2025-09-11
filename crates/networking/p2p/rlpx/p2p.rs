@@ -40,7 +40,7 @@ const fn pad_right<const N: usize>(input: &[u8; N]) -> [u8; 8] {
     padded
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 /// A capability is identified by a short ASCII name (max eight characters) and version number
 pub struct Capability {
     protocol: [u8; CAPABILITY_NAME_MAX_LENGTH],
@@ -67,6 +67,19 @@ impl Capability {
             protocol: pad_right(b"based"),
             version,
         }
+    }
+
+    /// Creates a capability with an arbitrary protocol name and version.
+    ///
+    /// The protocol name must be at most eight ASCII characters long.
+    pub fn new(name: &str, version: u8) -> Self {
+        assert!(
+            name.len() <= CAPABILITY_NAME_MAX_LENGTH,
+            "Capability name must be at most {CAPABILITY_NAME_MAX_LENGTH} bytes",
+        );
+        let mut protocol = [0u8; CAPABILITY_NAME_MAX_LENGTH];
+        protocol[..name.len()].copy_from_slice(name.as_bytes());
+        Self { protocol, version }
     }
 
     pub fn protocol(&self) -> &str {
@@ -127,8 +140,10 @@ impl HelloMessage {
     }
 }
 
+impl HelloMessage { pub const CODE: u8 = 0x00; }
+
 impl RLPxMessage for HelloMessage {
-    const CODE: u8 = 0x00;
+    fn code(&self) -> u8 { Self::CODE }
     fn encode(&self, mut buf: &mut dyn BufMut) -> Result<(), RLPEncodeError> {
         Encoder::new(&mut buf)
             .encode_field(&SUPPORTED_P2P_CAPABILITY_VERSION) // protocolVersion
@@ -262,8 +277,10 @@ impl DisconnectMessage {
     }
 }
 
+impl DisconnectMessage { pub const CODE: u8 = 0x01; }
+
 impl RLPxMessage for DisconnectMessage {
-    const CODE: u8 = 0x01;
+    fn code(&self) -> u8 { Self::CODE }
     fn encode(&self, buf: &mut dyn BufMut) -> Result<(), RLPEncodeError> {
         let mut encoded_data = vec![];
         // Disconnect msg_data is reason or none
@@ -306,8 +323,10 @@ impl RLPxMessage for DisconnectMessage {
 #[derive(Debug, Clone, Copy)]
 pub struct PingMessage {}
 
+impl PingMessage { pub const CODE: u8 = 0x02; }
+
 impl RLPxMessage for PingMessage {
-    const CODE: u8 = 0x02;
+    fn code(&self) -> u8 { Self::CODE }
     fn encode(&self, buf: &mut dyn BufMut) -> Result<(), RLPEncodeError> {
         let mut encoded_data = vec![];
         // Ping msg_data is only []
@@ -332,8 +351,10 @@ impl RLPxMessage for PingMessage {
 #[derive(Debug, Clone, Copy)]
 pub struct PongMessage {}
 
+impl PongMessage { pub const CODE: u8 = 0x03; }
+
 impl RLPxMessage for PongMessage {
-    const CODE: u8 = 0x03;
+    fn code(&self) -> u8 { Self::CODE }
     fn encode(&self, buf: &mut dyn BufMut) -> Result<(), RLPEncodeError> {
         let mut encoded_data = vec![];
         // Pong msg_data is only []

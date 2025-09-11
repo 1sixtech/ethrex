@@ -34,8 +34,10 @@ impl BlockRangeUpdate {
     }
 }
 
+impl BlockRangeUpdate { pub const CODE: u8 = 0x11; }
+
 impl RLPxMessage for BlockRangeUpdate {
-    const CODE: u8 = 0x11;
+    fn code(&self) -> u8 { Self::CODE }
     fn encode(&self, buf: &mut dyn BufMut) -> Result<(), RLPEncodeError> {
         let mut encoded_data = vec![];
         Encoder::new(&mut encoded_data)

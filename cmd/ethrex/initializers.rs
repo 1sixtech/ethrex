@@ -14,7 +14,9 @@ use ethrex_p2p::{
     kademlia::Kademlia,
     network::{P2PContext, peer_table},
     peer_handler::PeerHandler,
-    rlpx::l2::l2_connection::P2PBasedContext,
+    rlpx::{
+        eth::EthProtocol, l2::BasedProtocol, l2::l2_connection::P2PBasedContext, snap::SnapProtocol,
+    },
     sync_manager::SyncManager,
     types::{Node, NodeRecord},
     utils::public_key_from_signing_key,
@@ -190,7 +192,7 @@ pub async fn init_network(
 
     let bootnodes = get_bootnodes(opts, network, data_dir);
 
-    let context = P2PContext::new(
+    let mut context = P2PContext::new(
         local_p2p_node,
         local_node_record,
         tracker.clone(),
@@ -201,6 +203,15 @@ pub async fn init_network(
         get_client_version(),
         based_context,
     );
+
+    // Register default protocol implementations so that their capabilities are
+    // advertised during the handshake.  External crates can register
+    // additional protocols before the network is started.
+    context.register_protocol(Arc::new(EthProtocol));
+    context.register_protocol(Arc::new(SnapProtocol));
+    if context.based_context.is_some() {
+        context.register_protocol(Arc::new(BasedProtocol));
+    }
 
     ethrex_p2p::start_network(context, bootnodes)
         .await

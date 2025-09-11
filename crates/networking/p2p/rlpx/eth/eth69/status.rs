@@ -20,8 +20,10 @@ pub struct StatusMessage69 {
     pub(crate) lastest_block_hash: BlockHash,
 }
 
+impl StatusMessage69 { pub const CODE: u8 = 0x00; }
+
 impl RLPxMessage for StatusMessage69 {
-    const CODE: u8 = 0x00;
+    fn code(&self) -> u8 { Self::CODE }
     fn encode(&self, buf: &mut dyn BufMut) -> Result<(), RLPEncodeError> {
         let mut encoded_data = vec![];
         Encoder::new(&mut encoded_data)

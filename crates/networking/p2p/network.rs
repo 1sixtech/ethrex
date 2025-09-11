@@ -7,11 +7,14 @@ use crate::{
     metrics::METRICS,
     peer_score::PeerScores,
     rlpx::{
-        connection::server::{RLPxConnBroadcastSender, RLPxConnection},
+        connection::server::{CastMessage, RLPxConnBroadcastSender, RLPxConnection},
+        error::RLPxError,
         initiator::{RLPxInitiator, RLPxInitiatorError},
         l2::l2_connection::P2PBasedContext,
         message::Message,
-        p2p::SUPPORTED_SNAP_CAPABILITIES,
+        p2p::{Capability, SUPPORTED_SNAP_CAPABILITIES},
+        protocol::Protocol,
+        protocol_registry::ProtocolRegistry,
     },
     tx_broadcaster::{TxBroadcaster, TxBroadcasterError},
     types::{Node, NodeRecord},
@@ -48,6 +51,7 @@ pub struct P2PContext {
     pub local_node_record: Arc<Mutex<NodeRecord>>,
     pub client_version: String,
     pub based_context: Option<P2PBasedContext>,
+    pub protocol_registry: Arc<ProtocolRegistry>,
 }
 
 impl P2PContext {
@@ -79,7 +83,93 @@ impl P2PContext {
             broadcast: channel_broadcast_send_end,
             client_version,
             based_context,
+            protocol_registry: Arc::new(ProtocolRegistry::new()),
         }
+    }
+
+    /// Registers a new [`Protocol`] implementation that will be advertised
+    /// during the RLPx handshake.  External crates may use this method to plug
+    /// additional request types before the network is started.
+    pub fn register_protocol(&mut self, protocol: Arc<dyn Protocol>) {
+        Arc::get_mut(&mut self.protocol_registry)
+            .expect("no other references to protocol registry exist when registering")
+            .register(protocol);
+    }
+
+    pub async fn broadcast_message(&self, msg: Message) -> Result<(), RLPxError> {
+        let peers = self.table.get_peer_channels_with_capabilities(&[]).await;
+        for (peer_id, mut peer_channels, capabilities) in peers {
+            if peer_supports_message(&capabilities, &msg) {
+                if let Err(err) = peer_channels
+                    .connection
+                    .cast(CastMessage::BackendMessage(msg.clone()))
+                    .await
+                {
+                    tracing::error!(
+                        peer_id = %format!("{:#x}", peer_id),
+                        err = ?err,
+                        "Failed to broadcast message to peer"
+                    );
+                }
+            }
+        }
+        Ok(())
+    }
+
+    /// Sends an RLPx [`Message`] to the given `peer_id` if that peer supports
+    /// the capability required by the message.
+    pub async fn send_to_peer(&self, peer_id: H256, msg: Message) -> Result<(), RLPxError> {
+        let maybe = self
+            .table
+            .get_peer_channels_with_capabilities(&[])
+            .await
+            .into_iter()
+            .find(|(id, _, _)| *id == peer_id);
+        let Some((_, mut peer_channels, capabilities)) = maybe else {
+            return Err(RLPxError::NotFound(format!("peer {:#x}", peer_id)));
+        };
+        if !peer_supports_message(&capabilities, &msg) {
+            return Err(RLPxError::BadRequest(
+                "Peer does not support required capability".to_string(),
+            ));
+        }
+        peer_channels
+            .connection
+            .cast(CastMessage::BackendMessage(msg))
+            .await
+            .map_err(|e| RLPxError::SendMessage(e.to_string()))?;
+        Ok(())
+    }
+}
+
+fn peer_supports_message(capabilities: &[Capability], msg: &Message) -> bool {
+    use Message::*;
+
+    let required = match msg {
+        Status(_)
+        | Transactions(_)
+        | GetBlockHeaders(_)
+        | BlockHeaders(_)
+        | GetBlockBodies(_)
+        | BlockBodies(_)
+        | NewPooledTransactionHashes(_)
+        | GetPooledTransactions(_)
+        | PooledTransactions(_)
+        | GetReceipts(_)
+        | Receipts(_)
+        | BlockRangeUpdate(_) => Some(("eth", 68u8)),
+        GetAccountRange(_) | AccountRange(_) | GetStorageRanges(_) | StorageRanges(_)
+        | GetByteCodes(_) | ByteCodes(_) | GetTrieNodes(_) | TrieNodes(_) => Some(("snap", 1u8)),
+        L2(_) => Some(("based", 1u8)),
+        _ => None,
+    };
+
+    if let Some((protocol, min_version)) = required {
+        capabilities
+            .iter()
+            .any(|cap| cap.protocol() == protocol && cap.version >= min_version)
+    } else {
+        true
     }
 }
 

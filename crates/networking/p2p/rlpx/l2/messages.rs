@@ -26,8 +26,10 @@ pub struct NewBlock {
     pub signature: Signature,
 }
 
+impl NewBlock { pub const CODE: u8 = 0x0; }
+
 impl RLPxMessage for NewBlock {
-    const CODE: u8 = 0x0;
+    fn code(&self) -> u8 { Self::CODE }
 
     fn encode(&self, buf: &mut dyn BufMut) -> Result<(), RLPEncodeError> {
         let mut encoded_data = vec![];
@@ -96,8 +98,10 @@ pub fn batch_hash(sealed_batch: &Batch) -> H256 {
     keccak(input.as_flattened())
 }
 
+impl BatchSealed { pub const CODE: u8 = 0x1; }
+
 impl RLPxMessage for BatchSealed {
-    const CODE: u8 = 0x1;
+    fn code(&self) -> u8 { Self::CODE }
 
     fn encode(&self, buf: &mut dyn BufMut) -> Result<(), RLPEncodeError> {
         let mut encoded_data = vec![];

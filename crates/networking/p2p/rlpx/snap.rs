@@ -15,6 +15,11 @@ use ethrex_rlp::{
     structs::{Decoder, Encoder},
 };
 
+use crate::rlpx::error::RLPxError;
+use crate::rlpx::p2p::Capability;
+use crate::rlpx::protocol::Protocol;
+use crate::rlpx::{SNAP_CAPABILITY_OFFSET, connection::server::Established};
+
 // Snap Capability Messages
 
 #[derive(Debug, Clone)]
@@ -81,8 +86,14 @@ pub struct TrieNodes {
     pub nodes: Vec<Bytes>,
 }
 
+impl GetAccountRange {
+    pub const CODE: u8 = 0x00;
+}
+
 impl RLPxMessage for GetAccountRange {
-    const CODE: u8 = 0x00;
+    fn code(&self) -> u8 {
+        Self::CODE
+    }
     fn encode(&self, buf: &mut dyn BufMut) -> Result<(), RLPEncodeError> {
         let mut encoded_data = vec![];
         Encoder::new(&mut encoded_data)
@@ -118,8 +129,14 @@ impl RLPxMessage for GetAccountRange {
     }
 }
 
+impl AccountRange {
+    pub const CODE: u8 = 0x01;
+}
+
 impl RLPxMessage for AccountRange {
-    const CODE: u8 = 0x01;
+    fn code(&self) -> u8 {
+        Self::CODE
+    }
     fn encode(&self, buf: &mut dyn BufMut) -> Result<(), RLPEncodeError> {
         let mut encoded_data = vec![];
         Encoder::new(&mut encoded_data)
@@ -149,8 +166,14 @@ impl RLPxMessage for AccountRange {
     }
 }
 
+impl GetStorageRanges {
+    pub const CODE: u8 = 0x02;
+}
+
 impl RLPxMessage for GetStorageRanges {
-    const CODE: u8 = 0x02;
+    fn code(&self) -> u8 {
+        Self::CODE
+    }
     fn encode(&self, buf: &mut dyn BufMut) -> Result<(), RLPEncodeError> {
         let mut encoded_data = vec![];
         Encoder::new(&mut encoded_data)
@@ -199,8 +222,14 @@ impl RLPxMessage for GetStorageRanges {
     }
 }
 
+impl StorageRanges {
+    pub const CODE: u8 = 0x03;
+}
+
 impl RLPxMessage for StorageRanges {
-    const CODE: u8 = 0x03;
+    fn code(&self) -> u8 {
+        Self::CODE
+    }
     fn encode(&self, buf: &mut dyn BufMut) -> Result<(), RLPEncodeError> {
         let mut encoded_data = vec![];
         Encoder::new(&mut encoded_data)
@@ -226,8 +255,14 @@ impl RLPxMessage for StorageRanges {
     }
 }
 
+impl GetByteCodes {
+    pub const CODE: u8 = 0x04;
+}
+
 impl RLPxMessage for GetByteCodes {
-    const CODE: u8 = 0x04;
+    fn code(&self) -> u8 {
+        Self::CODE
+    }
     fn encode(&self, buf: &mut dyn BufMut) -> Result<(), RLPEncodeError> {
         let mut encoded_data = vec![];
         Encoder::new(&mut encoded_data)
@@ -253,8 +288,14 @@ impl RLPxMessage for GetByteCodes {
     }
 }
 
+impl ByteCodes {
+    pub const CODE: u8 = 0x05;
+}
+
 impl RLPxMessage for ByteCodes {
-    const CODE: u8 = 0x05;
+    fn code(&self) -> u8 {
+        Self::CODE
+    }
     fn encode(&self, buf: &mut dyn BufMut) -> Result<(), RLPEncodeError> {
         let mut encoded_data = vec![];
         Encoder::new(&mut encoded_data)
@@ -278,8 +319,14 @@ impl RLPxMessage for ByteCodes {
     }
 }
 
+impl GetTrieNodes {
+    pub const CODE: u8 = 0x06;
+}
+
 impl RLPxMessage for GetTrieNodes {
-    const CODE: u8 = 0x06;
+    fn code(&self) -> u8 {
+        Self::CODE
+    }
     fn encode(&self, buf: &mut dyn BufMut) -> Result<(), RLPEncodeError> {
         let mut encoded_data = vec![];
         Encoder::new(&mut encoded_data)
@@ -312,8 +359,14 @@ impl RLPxMessage for GetTrieNodes {
     }
 }
 
+impl TrieNodes {
+    pub const CODE: u8 = 0x07;
+}
+
 impl RLPxMessage for TrieNodes {
-    const CODE: u8 = 0x07;
+    fn code(&self) -> u8 {
+        Self::CODE
+    }
     fn encode(&self, buf: &mut dyn BufMut) -> Result<(), RLPEncodeError> {
         let mut encoded_data = vec![];
         Encoder::new(&mut encoded_data)
@@ -465,5 +518,39 @@ impl RLPDecode for StorageSlot {
         let (data, decoder) = decoder.get_encoded_item()?;
         let data = U256::decode(ethrex_rlp::decode::decode_bytes(&data)?.0)?;
         Ok((Self { hash, data }, decoder.finish()?))
+    }
+}
+
+/// Minimal implementation of the [`Protocol`] trait for the `snap` capability.
+pub struct SnapProtocol;
+
+impl Protocol for SnapProtocol {
+    fn capability(&self) -> Capability {
+        Capability::snap(1)
+    }
+
+    fn decode(&self, _id: u8, _bytes: &[u8]) -> Result<Box<dyn RLPxMessage>, RLPDecodeError> {
+        Err(RLPDecodeError::MalformedData)
+    }
+
+    fn handle(
+        &self,
+        _state: &mut Established,
+        _msg: Box<dyn RLPxMessage>,
+    ) -> Result<(), RLPxError> {
+        Ok(())
+    }
+
+    fn message_ids(&self) -> Vec<u8> {
+        vec![
+            SNAP_CAPABILITY_OFFSET + GetAccountRange::CODE,
+            SNAP_CAPABILITY_OFFSET + AccountRange::CODE,
+            SNAP_CAPABILITY_OFFSET + GetStorageRanges::CODE,
+            SNAP_CAPABILITY_OFFSET + StorageRanges::CODE,
+            SNAP_CAPABILITY_OFFSET + GetByteCodes::CODE,
+            SNAP_CAPABILITY_OFFSET + ByteCodes::CODE,
+            SNAP_CAPABILITY_OFFSET + GetTrieNodes::CODE,
+            SNAP_CAPABILITY_OFFSET + TrieNodes::CODE,
+        ]
     }
 }

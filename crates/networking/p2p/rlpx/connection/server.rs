@@ -50,8 +50,8 @@ use crate::{
         },
         p2p::{
             self, Capability, DisconnectMessage, DisconnectReason, PingMessage, PongMessage,
-            SUPPORTED_ETH_CAPABILITIES, SUPPORTED_SNAP_CAPABILITIES,
         },
+        protocol_registry::ProtocolRegistry,
         utils::{log_peer_debug, log_peer_error, log_peer_warn},
     },
     snap::{
@@ -113,6 +113,7 @@ pub struct Established {
     pub(crate) backend_channel: Option<mpsc::Sender<Message>>,
     pub(crate) _inbound: bool,
     pub(crate) l2_state: L2ConnState,
+    pub(crate) protocol_registry: Arc<ProtocolRegistry>,
 }
 
 impl Established {
@@ -601,14 +602,7 @@ async fn exchange_hello_messages<S>(
 where
     S: Unpin + Stream<Item = Result<Message, RLPxError>>,
 {
-    let mut supported_capabilities: Vec<Capability> = [
-        &SUPPORTED_ETH_CAPABILITIES[..],
-        &SUPPORTED_SNAP_CAPABILITIES[..],
-    ]
-    .concat();
-    if state.l2_state.is_supported() {
-        supported_capabilities.push(l2::SUPPORTED_BASED_CAPABILITIES[0].clone());
-    }
+    let supported_capabilities: Vec<Capability> = state.protocol_registry.capabilities();
     let hello_msg = Message::Hello(p2p::HelloMessage::new(
         supported_capabilities,
         PublicKey::from_secret_key(secp256k1::SECP256K1, &state.signer),
@@ -637,24 +631,31 @@ where
             );
 
             // Check if we have any capability in common and store the highest version
+            let local_caps = state.protocol_registry.capabilities();
             for cap in &hello_message.capabilities {
                 match cap.protocol() {
                     "eth" => {
-                        if SUPPORTED_ETH_CAPABILITIES.contains(cap)
+                        if local_caps
+                            .iter()
+                            .any(|c| c.protocol() == "eth" && c.version >= cap.version)
                             && cap.version > negotiated_eth_version
                         {
                             negotiated_eth_version = cap.version;
                         }
                     }
                     "snap" => {
-                        if SUPPORTED_SNAP_CAPABILITIES.contains(cap)
+                        if local_caps
+                            .iter()
+                            .any(|c| c.protocol() == "snap" && c.version >= cap.version)
                             && cap.version > negotiated_snap_version
                         {
                             negotiated_snap_version = cap.version;
                         }
                     }
-                    "based" if state.l2_state.is_supported() => {
-                        state.l2_state.set_established()?;
+                    "based" => {
+                        if local_caps.iter().any(|c| c.protocol() == "based") {
+                            state.l2_state.set_established()?;
+                        }
                     }
                     _ => {}
                 }
@@ -685,7 +686,7 @@ where
     }
 }
 
-pub(crate) async fn send(state: &mut Established, message: Message) -> Result<(), RLPxError> {
+pub async fn send(state: &mut Established, message: Message) -> Result<(), RLPxError> {
     state.sink.lock().await.send(message).await
 }
 
@@ -855,6 +856,14 @@ async fn handle_peer_message(state: &mut Established, message: Message) -> Resul
                 // TODO: this unwrap() is temporary, until we fix the backend process to use spawned
                 .expect("Backend channel is not available")
                 .send(message)?
+        }
+        Message::Custom { id, data } => {
+            if let Some(protocol) = state.protocol_registry.get(id) {
+                let msg = protocol.decode(id, &data)?;
+                protocol.handle(state, msg)?;
+            } else {
+                return Err(RLPxError::MessageNotHandled(format!("{id}")));
+            }
         }
         // TODO: Add new message types and handlers as they are implemented
         message => return Err(RLPxError::MessageNotHandled(format!("{message}"))),
