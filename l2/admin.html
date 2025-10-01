@@ -3,7 +3,7 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>Getting started - Ethrex</title>
+        <title>Admin server - Ethrex</title>
 
 
         <!-- Custom HTML head -->
@@ -237,20 +237,78 @@
 }
 
 </style>
-<h1 id="developer-docs"><a class="header" href="#developer-docs">Developer docs</a></h1>
-<p>Welcome to the ethrex developer docs!</p>
-<p>This section contains documentation on the internals of the project.</p>
-<p>To get started first, read the developer <a href="./installing.html">installation guide</a> to learn about ethrex and its features. Then you can look into the <a href="../developers/l1/introduction.html">L1 developer docs</a> or the <a href="../developers/l2/introduction.html">L2 developer docs</a></p>
+<h1 id="admin-api"><a class="header" href="#admin-api">Admin API</a></h1>
+<p>This API exposes endpoints to manage the Sequencer.</p>
+<h2 id="base-url"><a class="header" href="#base-url">Base URL</a></h2>
+<p>By default the server is listening on <code>127.0.0.1:5555</code> but can be configured with <code>--admin-server.addr &lt;address&gt;</code> <code>--admin-server.port &lt;port&gt;</code></p>
+<h2 id="endpoints"><a class="header" href="#endpoints">Endpoints</a></h2>
+<h3 id="health"><a class="header" href="#health">Health</a></h3>
+<hr />
+<h4 id="sequencer-health"><a class="header" href="#sequencer-health">Sequencer Health</a></h4>
+<p><strong>Description</strong></p>
+<p>Performs a healthcheck on all the components of the sequencer returning a json with the status</p>
+<p><strong>Endpoint</strong></p>
+<pre><code>GET /health
+</code></pre>
+<p><strong>Example</strong></p>
+<pre><code>curl -X GET http://localhost:5555/health
+</code></pre>
+<hr />
+<h4 id="admin-server-health"><a class="header" href="#admin-server-health">Admin server health</a></h4>
+<p><strong>Description</strong></p>
+<p>Performs a healthcheck on the http admin server</p>
+<p><strong>Endpoint</strong></p>
+<pre><code>GET /admin/health
+</code></pre>
+<p><strong>Example</strong></p>
+<pre><code>curl -X GET http://localhost:5555/admin/health
+</code></pre>
+<h3 id="l1-committer"><a class="header" href="#l1-committer">L1 Committer</a></h3>
+<hr />
+<h4 id="start-committer-immediately"><a class="header" href="#start-committer-immediately">Start Committer immediately</a></h4>
+<p><strong>Description</strong></p>
+<p>Starts the committer immediately (with a delay of 0).</p>
+<p><strong>Endpoint</strong></p>
+<pre><code>GET /committer/start
+</code></pre>
+<p><strong>Example</strong></p>
+<pre><code>curl -X GET http://localhost:5555/committer/start
+</code></pre>
+<hr />
+<h4 id="start-committer-with-delay"><a class="header" href="#start-committer-with-delay">Start Committer (with delay)</a></h4>
+<p><strong>Description</strong></p>
+<p>Starts the committer with a configurable delay.</p>
+<p><strong>Endpoint</strong></p>
+<pre><code>GET /committer/start/{delay}
+</code></pre>
+<p><strong>Example</strong></p>
+<pre><code>curl -X GET http://localhost:5555/committer/start/60000
+</code></pre>
+<p><strong>Parameters</strong></p>
+<div class="table-wrapper"><table><thead><tr><th>Name</th><th>Type</th><th>Description</th></tr></thead><tbody>
+<tr><td>delay</td><td>number</td><td>Delay in milliseconds before starting the committer.</td></tr>
+</tbody></table>
+</div>
+<hr />
+<h4 id="stop-committer"><a class="header" href="#stop-committer">Stop Committer</a></h4>
+<p><strong>Description</strong></p>
+<p>Stops the committer.</p>
+<p><strong>Endpoint</strong></p>
+<pre><code>GET /committer/stop
+</code></pre>
+<p><strong>Example</strong></p>
+<pre><code>curl -X GET http://localhost:5555/committer/stop
+</code></pre>
 
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
-                            <a rel="prev" href="../l2/fundamentals/based.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                            <a rel="prev" href="../l2/monitoring.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                                 <i class="fa fa-angle-left"></i>
                             </a>
 
-                            <a rel="next prefetch" href="../developers/installing.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <a rel="next prefetch" href="../l2/architecture/index.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <i class="fa fa-angle-right"></i>
                             </a>
 
@@ -260,11 +318,11 @@
             </div>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
-                    <a rel="prev" href="../l2/fundamentals/based.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                    <a rel="prev" href="../l2/monitoring.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                         <i class="fa fa-angle-left"></i>
                     </a>
 
-                    <a rel="next prefetch" href="../developers/installing.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                    <a rel="next prefetch" href="../l2/architecture/index.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <i class="fa fa-angle-right"></i>
                     </a>
             </nav>

@@ -292,6 +292,11 @@ Node options:
 
           [default: INFO]
 
+      --mempool.maxsize &lt;MEMPOOL_MAX_SIZE&gt;
+          Maximum size of the mempool in number of transactions
+        
+          [default: 10000]
+
 P2P options:
       --bootnodes &lt;BOOTNODE_LIST&gt;...
           Comma separated enode URLs for P2P discovery bootstrap.
@@ -319,7 +324,7 @@ RPC options:
           Listening address for the http rpc server.
 
           [env: ETHREX_HTTP_ADDR=]
-          [default: localhost]
+          [default: 0.0.0.0]
 
       --http.port &lt;PORT&gt;
           Listening port for the http rpc server.
@@ -330,7 +335,7 @@ RPC options:
       --authrpc.addr &lt;ADDRESS&gt;
           Listening address for the authenticated rpc server.
 
-          [default: localhost]
+          [default: 127.0.0.1]
 
       --authrpc.port &lt;PORT&gt;
           Listening port for the authenticated rpc server.
@@ -341,6 +346,12 @@ RPC options:
           Receives the jwt secret used for authenticated rpc requests.
 
           [default: jwt.hex]
+
+Block producer options:
+      --block-producer.extra-data &lt;EXTRA_DATA&gt;
+          Block extra data message.
+
+          [default: "ethrex 0.1.0"]
 </code></pre>
 <!-- END_CLI_HELP -->
 <h2 id="ethrex-l2"><a class="header" href="#ethrex-l2">ethrex l2</a></h2>
@@ -655,7 +666,7 @@ Monitor options:
 <h2 id="ethrex-l2-prover"><a class="header" href="#ethrex-l2-prover">ethrex l2 prover</a></h2>
 <pre><code>Initialize an ethrex prover
 
-Usage: ethrex l2 prover [OPTIONS] --proof-coordinators &lt;URL&gt;
+Usage: ethrex l2 prover [OPTIONS] --proof-coordinators &lt;URL&gt;...
 
 Options:
   -h, --help
@@ -665,10 +676,10 @@ Prover client options:
       --backend &lt;BACKEND&gt;
           [env: PROVER_CLIENT_BACKEND=]
           [default: exec]
-          [possible values: exec]
+          [possible values: exec, sp1, risc0]
 
-      --proof-coordinators &lt;URL&gt;
-          URL of the sequencer's proof coordinator
+      --proof-coordinators &lt;URL&gt;...
+          URLs of all the sequencers' proof coordinator
 
           [env: PROVER_CLIENT_PROOF_COORDINATOR_URL=]
 
@@ -687,17 +698,22 @@ Prover client options:
           Activate aligned proving system
 
           [env: PROVER_CLIENT_ALIGNED=]
+
+      --sp1-server &lt;URL&gt;
+          Url to the moongate server to use when using sp1 backend
+
+          [env: ETHREX_SP1_SERVER=]
 </code></pre>
 
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
-                            <a rel="prev" href="ethrex_replay/profiling.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                            <a rel="prev" href="ethrex_replay/faq.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                                 <i class="fa fa-angle-left"></i>
                             </a>
 
-                            <a rel="next prefetch" href="CONTRIBUTING_DOCS.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <a rel="next prefetch" href="roadmap.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <i class="fa fa-angle-right"></i>
                             </a>
 
@@ -707,11 +723,11 @@ Prover client options:
             </div>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
-                    <a rel="prev" href="ethrex_replay/profiling.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                    <a rel="prev" href="ethrex_replay/faq.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                         <i class="fa fa-angle-left"></i>
                     </a>
 
-                    <a rel="next prefetch" href="CONTRIBUTING_DOCS.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                    <a rel="next prefetch" href="roadmap.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <i class="fa fa-angle-right"></i>
                     </a>
             </nav>
