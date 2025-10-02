@@ -2,6 +2,7 @@ use bytes::BufMut;
 use ethrex_rlp::error::{RLPDecodeError, RLPEncodeError};
 use std::fmt::Display;
 
+use crate::rlpx::mojave;
 use crate::rlpx::mojave::messages::MojaveMessage;
 use crate::rlpx::snap::{
     AccountRange, ByteCodes, GetAccountRange, GetByteCodes, GetStorageRanges, GetTrieNodes,
@@ -62,6 +63,7 @@ pub trait RLPxMessage: Sized {
 
     fn decode(msg_data: &[u8]) -> Result<Self, RLPDecodeError>;
 }
+
 #[derive(Debug, Clone)]
 pub enum Message {
     Hello(HelloMessage),
@@ -160,7 +162,10 @@ impl Message {
             }
 
             // mojave capability
-            Message::Mojave(_) => MOJAVE_CAPABILITY_OFFSET + MojaveMessage::CODE,
+            Message::Mojave(mojave_msg) => match mojave_msg {
+                MojaveMessage::Block(_) => MOJAVE_CAPABILITY_OFFSET + messages::NewBlock::CODE,
+                MojaveMessage::Proof(_) => MOJAVE_CAPABILITY_OFFSET + messages::BatchSealed::CODE,
+            },
         }
     }
     pub fn decode(
@@ -248,7 +253,17 @@ impl Message {
                 },
             ))
         } else {
-            Ok(Message::Mojave(MojaveMessage::decode(data)?))
+            Ok(Message::Mojave(match msg_id - MOJAVE_CAPABILITY_OFFSET {
+                mojave::messages::MojaveBlock::CODE => {
+                    let decoded = mojave::messages::MojaveBlock::decode(data)?;
+                    MojaveMessage::Block(decoded)
+                }
+                mojave::messages::MojaveProof::CODE => {
+                    let decoded = mojave::messages::MojaveProof::decode(data)?;
+                    MojaveMessage::Proof(decoded)
+                }
+                _ => return Err(RLPDecodeError::MalformedData),
+            }))
         }
     }
 
@@ -289,7 +304,10 @@ impl Message {
                 L2Message::BatchSealed(msg) => msg.encode(buf),
                 L2Message::NewBlock(msg) => msg.encode(buf),
             },
-            Message::Mojave(msg) => msg.encode(buf),
+            Message::Mojave(msg) => match msg {
+                MojaveMessage::Block(mojave_block) => mojave_block.encode(buf),
+                MojaveMessage::Proof(mojave_proof) => mojave_proof.encode(buf),
+            },
         }
     }
 }

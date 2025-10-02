@@ -8,7 +8,6 @@ use crate::{
         initiator::RLPxInitiator,
         l2::l2_connection::P2PBasedContext,
         message::Message,
-        mojave::messages::{MojaveMessage, MojavePayload},
         p2p::SUPPORTED_SNAP_CAPABILITIES,
     },
     tx_broadcaster::{TxBroadcaster, TxBroadcasterError},
@@ -89,11 +88,10 @@ impl P2PContext {
         })
     }
 
-    pub fn broadcast_mojave_message(&self, payload: MojavePayload) -> Result<(), NetworkError> {
+    pub fn broadcast_mojave_message(&self, payload: Message) -> Result<(), NetworkError> {
         let task_id = tokio::task::id();
-        let message = MojaveMessage::from_payload(&payload)?;
         self.broadcast
-            .send((task_id, Message::Mojave(message).into()))
+            .send((task_id, payload.into()))
             .map_err(|_| {
                 RLPxError::BroadcastError("Could not broadcast mojave message".to_owned())
             })?;
@@ -374,7 +372,7 @@ Current Header Hash: {current_header_hash:x}
 headers progress: {headers_download_progress} (total: {headers_to_download}, downloaded: {headers_downloaded}, remaining: {headers_remaining})
 account leaves download: {account_leaves_downloaded}, elapsed: {account_leaves_time}
 account leaves insertion: {account_leaves_inserted_percentage:.2}%, elapsed: {account_leaves_inserted_time}
-storage leaves download: {storage_leaves_downloaded}, elapsed: {storage_leaves_time}, initially accounts with storage {storage_accounts}, healed accounts {storage_accounts_healed} 
+storage leaves download: {storage_leaves_downloaded}, elapsed: {storage_leaves_time}, initially accounts with storage {storage_accounts}, healed accounts {storage_accounts_healed}
 storage leaves insertion: {storage_leaves_inserted_time}
 healing: global accounts healed {healed_accounts} global storage slots healed {healed_storages}, elapsed: {heal_time}, current throttle {heal_current_throttle}
 bytecodes progress: downloaded: {bytecodes_downloaded}, elapsed: {bytecodes_download_time})"
