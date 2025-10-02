@@ -26,7 +26,7 @@ const SNAP_CAPABILITY_OFFSET_ETH_68: u8 = 0x21;
 const SNAP_CAPABILITY_OFFSET_ETH_69: u8 = 0x22;
 const BASED_CAPABILITY_OFFSET_ETH_68: u8 = 0x30;
 const BASED_CAPABILITY_OFFSET_ETH_69: u8 = 0x31;
-const MOJABE_CAPABILITY_OFFSET: u8 = 0x40;
+const MOJAVE_CAPABILITY_OFFSET: u8 = 0x40;
 
 #[derive(Debug, Clone, Copy, Default)]
 pub enum EthCapVersion {
@@ -160,7 +160,7 @@ impl Message {
             }
 
             // mojave capability
-            Message::Mojave(_) => MOJABE_CAPABILITY_OFFSET + MojaveMessage::CODE,
+            Message::Mojave(_) => MOJAVE_CAPABILITY_OFFSET + MojaveMessage::CODE,
         }
     }
     pub fn decode(
@@ -232,7 +232,7 @@ impl Message {
                 TrieNodes::CODE => Ok(Message::TrieNodes(TrieNodes::decode(data)?)),
                 _ => Err(RLPDecodeError::MalformedData),
             }
-        } else if msg_id < MOJABE_CAPABILITY_OFFSET {
+        } else if msg_id < MOJAVE_CAPABILITY_OFFSET {
             // based capability
             Ok(Message::L2(
                 match msg_id - eth_version.based_capability_offset() {
