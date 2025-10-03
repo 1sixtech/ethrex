@@ -41,7 +41,7 @@ pub struct P2PContext {
     pub table: Kademlia,
     pub storage: Store,
     pub blockchain: Arc<Blockchain>,
-    pub(crate) broadcast: RLPxConnBroadcastSender,
+    pub broadcast: RLPxConnBroadcastSender,
     pub local_node: Node,
     pub local_node_record: Arc<Mutex<NodeRecord>>,
     pub client_version: String,
