@@ -3,7 +3,7 @@ use ethrex_rlp::error::{RLPDecodeError, RLPEncodeError};
 use std::fmt::Display;
 
 use crate::rlpx::mojave;
-use crate::rlpx::mojave::messages::MojaveMessage;
+use crate::rlpx::mojave::messages::{MojaveBlock, MojaveMessage, MojaveProof};
 use crate::rlpx::snap::{
     AccountRange, ByteCodes, GetAccountRange, GetByteCodes, GetStorageRanges, GetTrieNodes,
     StorageRanges, TrieNodes,
@@ -163,8 +163,8 @@ impl Message {
 
             // mojave capability
             Message::Mojave(mojave_msg) => match mojave_msg {
-                MojaveMessage::Block(_) => MOJAVE_CAPABILITY_OFFSET + messages::NewBlock::CODE,
-                MojaveMessage::Proof(_) => MOJAVE_CAPABILITY_OFFSET + messages::BatchSealed::CODE,
+                MojaveMessage::Block(_) => MOJAVE_CAPABILITY_OFFSET + MojaveBlock::CODE,
+                MojaveMessage::Proof(_) => MOJAVE_CAPABILITY_OFFSET + MojaveProof::CODE,
             },
         }
     }
