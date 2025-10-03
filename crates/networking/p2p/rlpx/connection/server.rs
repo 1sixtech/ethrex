@@ -29,7 +29,7 @@ use tokio::{
 use tokio_stream::StreamExt;
 use tokio_util::codec::Framed;
 
-use tracing::{debug, error};
+use tracing::{debug, error, info};
 
 use crate::{
     kademlia::{Kademlia, PeerChannels},
@@ -938,6 +938,7 @@ async fn handle_peer_message(state: &mut Established, message: Message) -> Resul
             handle_based_capability_message(state, req).await?;
         }
         Message::Mojave(req) => {
+            info!("Handling Mojave message: {req:?}");
             handle_mojave_capability_message(state, req).await?;
         }
         // Send response messages to the backend
@@ -976,6 +977,7 @@ async fn handle_broadcast(
     (id, broadcasted_msg): (task::Id, Arc<Message>),
 ) -> Result<(), RLPxError> {
     if id != tokio::task::id() {
+        info!("-- Broadcasted message from a different task, ignoring --");
         match broadcasted_msg.as_ref() {
             l2_msg @ Message::L2(_) => {
                 handle_l2_broadcast(state, l2_msg).await?;
