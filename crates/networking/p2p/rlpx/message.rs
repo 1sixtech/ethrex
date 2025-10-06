@@ -3,7 +3,7 @@ use ethrex_rlp::error::{RLPDecodeError, RLPEncodeError};
 use std::fmt::Display;
 
 use crate::rlpx::mojave;
-use crate::rlpx::mojave::messages::{MojaveBlock, MojaveMessage, MojaveProof};
+use crate::rlpx::mojave::messages::{MojaveBatch, MojaveBlock, MojaveMessage, MojaveProof};
 use crate::rlpx::snap::{
     AccountRange, ByteCodes, GetAccountRange, GetByteCodes, GetStorageRanges, GetTrieNodes,
     StorageRanges, TrieNodes,
@@ -65,6 +65,7 @@ pub trait RLPxMessage: Sized {
 }
 
 #[derive(Debug, Clone)]
+#[allow(clippy::large_enum_variant)]
 pub enum Message {
     Hello(HelloMessage),
     Disconnect(DisconnectMessage),
@@ -165,6 +166,7 @@ impl Message {
             Message::Mojave(mojave_msg) => match mojave_msg {
                 MojaveMessage::Block(_) => MOJAVE_CAPABILITY_OFFSET + MojaveBlock::CODE,
                 MojaveMessage::Proof(_) => MOJAVE_CAPABILITY_OFFSET + MojaveProof::CODE,
+                MojaveMessage::Batch(_) => MOJAVE_CAPABILITY_OFFSET + MojaveBatch::CODE,
             },
         }
     }
@@ -307,6 +309,7 @@ impl Message {
             Message::Mojave(msg) => match msg {
                 MojaveMessage::Block(mojave_block) => mojave_block.encode(buf),
                 MojaveMessage::Proof(mojave_proof) => mojave_proof.encode(buf),
+                MojaveMessage::Batch(mojave_batch) => mojave_batch.encode(buf),
             },
         }
     }
