@@ -48,8 +48,8 @@ pub struct MojaveBlock {
 
 impl MojaveBlock {
     /// Create a new MojaveBlock
-    pub fn new(block: Block, signature: Signature) -> Self {
-        Self { block, signature: Some(signature) }
+    pub fn new(block: Block, signature: Option<Signature>) -> Self {
+        Self { block, signature }
     }
 
     /// Get the block
