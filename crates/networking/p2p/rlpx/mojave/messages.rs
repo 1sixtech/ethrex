@@ -43,13 +43,13 @@ impl MojaveBatch {
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct MojaveBlock {
     block: Block,
-    signature: Signature,
+    signature: Option<Signature>,
 }
 
 impl MojaveBlock {
     /// Create a new MojaveBlock
     pub fn new(block: Block, signature: Signature) -> Self {
-        Self { block, signature }
+        Self { block, signature: Some(signature) }
     }
 
     /// Get the block
@@ -58,8 +58,8 @@ impl MojaveBlock {
     }
 
     /// Get the signature
-    pub fn signature(&self) -> &Signature {
-        &self.signature
+    pub fn signature(&self) -> Option<&Signature> {
+        self.signature.as_ref()
     }
 }
 
@@ -87,7 +87,7 @@ impl RLPxMessage for MojaveBlock {
         let mut encoded_data = vec![];
         Encoder::new(&mut encoded_data)
             .encode_field(&self.block)
-            .encode_field(&self.signature)
+            .encode_optional_field(&self.signature)
             .finish();
         let msg_data = snappy_compress(encoded_data)?;
         buf.put_slice(&msg_data);
@@ -98,7 +98,7 @@ impl RLPxMessage for MojaveBlock {
         let decompressed_data = snappy_decompress(msg_data)?;
         let decoder = Decoder::new(&decompressed_data)?;
         let (block, decoder) = decoder.decode_field("block")?;
-        let (signature, decoder) = decoder.decode_field("signature")?;
+        let (signature, decoder) = decoder.decode_optional_field();
         decoder.finish()?;
         Ok(Self { block, signature })
     }
